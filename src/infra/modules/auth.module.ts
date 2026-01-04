@@ -8,6 +8,7 @@ import { TokenService } from "src/domain/services/auth/token-service";
 import { JwtTokenService } from "../security/jwt-token-service";
 import { AuthController } from "../http/auth/auth.controller";
 import { RefreshTokenUseCase } from "src/application/use-cases/auth/refresh-token-use-case";
+import { AuthenticationGuard } from "../guards/authentication.guard";
 
 @Module({
     providers: [
@@ -28,6 +29,6 @@ import { RefreshTokenUseCase } from "src/application/use-cases/auth/refresh-toke
     ],
     controllers: [
         AuthController
-    ]
+    ],
 })
 export class AuthModule { }

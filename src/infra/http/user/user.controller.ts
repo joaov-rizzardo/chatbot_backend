@@ -9,7 +9,7 @@ export class UserController {
     constructor(
         private readonly createUserUseCase: CreateUserUseCase
     ) { }
-
+    
     @Post()
     async create(@Body() user: CreateUserDto) {
         try {

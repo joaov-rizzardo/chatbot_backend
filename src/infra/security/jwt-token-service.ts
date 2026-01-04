@@ -8,11 +8,11 @@ export class JwtTokenService implements TokenService, OnModuleInit {
 
     private accessTokenSecret: string = ""
 
-    private accessTokenExpirationTime: number = 300
+    private accessTokenExpirationTime: number = 300000
 
     private refreshTokenSecret: string = ""
 
-    private refreshTokenExpirationTime: number = 86400
+    private refreshTokenExpirationTime: number = 86400000
 
     constructor(
         private readonly configService: ConfigService
@@ -32,7 +32,7 @@ export class JwtTokenService implements TokenService, OnModuleInit {
             userId: refreshToken.sub || ""
         };
     }
-    
+
     decodeAccessToken(token: string): AccessTokenPayload {
         const accessToken = jwt.decode(token) as jwt.JwtPayload;
         return {
