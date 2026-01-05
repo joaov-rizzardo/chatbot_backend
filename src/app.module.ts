@@ -5,6 +5,7 @@ import { UserModule } from './infra/modules/user.module';
 import { ConfigModule } from "@nestjs/config"
 import { AuthModule } from './infra/modules/auth.module';
 import { GuardsModule } from './infra/modules/guards.module';
+import { WorkspaceModule } from './infra/modules/workspace.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { GuardsModule } from './infra/modules/guards.module';
     GuardsModule,
     AuthModule,
     UserModule,
+    WorkspaceModule
   ],
   controllers: [AppController],
   providers: [],
