@@ -8,7 +8,8 @@ import { TokenService } from "src/domain/services/auth/token-service";
 import { JwtTokenService } from "../security/jwt-token-service";
 import { AuthController } from "../http/auth/auth.controller";
 import { RefreshTokenUseCase } from "src/application/use-cases/auth/refresh-token-use-case";
-import { AuthenticationGuard } from "../guards/authentication.guard";
+import { SessionRepository } from "src/domain/repositories/session.repository";
+import { PrismaSessionRepository } from "../database/prisma/repositories/prisma-session.repository";
 
 @Module({
     providers: [
@@ -25,6 +26,10 @@ import { AuthenticationGuard } from "../guards/authentication.guard";
         {
             provide: TokenService,
             useClass: JwtTokenService
+        },
+        {
+            provide: SessionRepository,
+            useClass: PrismaSessionRepository
         }
     ],
     controllers: [

@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { AccessTokenClaims, AccessTokenPayload, RefreshTokenPayload, TokenService } from "src/domain/services/auth/token-service";
+import { AccessTokenPayload, GenerateAccessTokenInput, RefreshTokenPayload, TokenService } from "src/domain/services/auth/token-service";
 import * as jwt from "jsonwebtoken"
 
 @Injectable()
@@ -29,29 +29,36 @@ export class JwtTokenService implements TokenService, OnModuleInit {
     decodeRefreshToken(token: string): RefreshTokenPayload {
         const refreshToken = jwt.decode(token) as jwt.JwtPayload;
         return {
-            userId: refreshToken.sub || ""
+            userId: refreshToken.sub || "",
+            sessionId: refreshToken.sessionId
         };
     }
 
     decodeAccessToken(token: string): AccessTokenPayload {
         const accessToken = jwt.decode(token) as jwt.JwtPayload;
         return {
+            sessionId: accessToken.sessionId,
             userId: accessToken.sub || "",
             email: accessToken.email,
             lastName: accessToken.lastName,
-            name: accessToken.name
+            name: accessToken.name,
+            workspaceId: accessToken.workspaceId,
+            workspaceRole: accessToken.workspaceRole
         };
     }
 
-    generateAccessToken(userId: string, claims: AccessTokenClaims): string {
-        return jwt.sign(claims, this.accessTokenSecret, {
-            subject: userId,
+    generateAccessToken(input: GenerateAccessTokenInput): string {
+        return jwt.sign({
+            ...input,
+            userId: undefined
+        }, this.accessTokenSecret, {
+            subject: input.userId,
             expiresIn: this.accessTokenExpirationTime
         })
     }
 
-    generateRefreshToken(userId: string): string {
-        return jwt.sign({}, this.refreshTokenSecret, {
+    generateRefreshToken(userId: string, sessionId: string): string {
+        return jwt.sign({ sessionId }, this.refreshTokenSecret, {
             subject: userId,
             expiresIn: this.refreshTokenExpirationTime
         })

@@ -23,6 +23,7 @@ model Users {
   created_at       DateTime           @default(now())
   updated_at       DateTime           @updatedAt
   workspaceMembers WorkspaceMembers[]
+  sessions         Sessions[]
 }
 
 model Workspaces {
@@ -31,6 +32,7 @@ model Workspaces {
   created_at       DateTime           @default(now())
   updated_at       DateTime           @updatedAt
   workspaceMembers WorkspaceMembers[]
+  sessions         Sessions[]
 }
 
 model WorkspaceMembers {
@@ -46,4 +48,14 @@ model WorkspaceMembers {
 enum WorkspaceRole {
   OWNER
   MEMBER
+}
+
+model Sessions {
+  id          String      @id @default(uuid())
+  userId      String
+  workspaceId String?
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  user        Users       @relation(fields: [userId], references: [id])
+  workspace   Workspaces? @relation(fields: [workspaceId], references: [id])
 }
