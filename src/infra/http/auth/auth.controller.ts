@@ -22,7 +22,6 @@ export class AuthController {
             return result
         } catch (error) {
             if (error instanceof InvalidRefreshTokenError) {
-                console.log("caiu auqi")
                 throw new UnauthorizedException({
                     code: error.code,
                     message: error.message

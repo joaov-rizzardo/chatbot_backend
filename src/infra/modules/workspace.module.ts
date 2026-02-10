@@ -12,11 +12,13 @@ import { JwtTokenService } from "../security/jwt-token-service";
 import { ConnectWorkspaceUseCase } from "src/application/use-cases/workspace/connect-workspace-use-case";
 import { SessionRepository } from "src/domain/repositories/session.repository";
 import { PrismaSessionRepository } from "../database/prisma/repositories/prisma-session.repository";
+import { ListUserWorkspacesUseCase } from "src/application/use-cases/workspace/list-user-workspaces-use-case";
 
 @Module({
     providers: [
         CreateWorkspaceUseCase,
         ConnectWorkspaceUseCase,
+        ListUserWorkspacesUseCase,
         {
             provide: WorkspaceRepository,
             useClass: PrismaWorkspaceRepository

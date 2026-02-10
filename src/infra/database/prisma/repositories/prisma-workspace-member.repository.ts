@@ -1,4 +1,5 @@
 import { AddWorkspaceMemberDTO } from "src/domain/dtos/workspace/add-workspace-member-dto";
+import { UserWorkspaceDto } from "src/domain/dtos/workspace/user-workspace-dto";
 import { WorkspaceMember } from "src/domain/entities/workspace-member";
 import { WorkspaceMemberRepository } from "src/domain/repositories/workspace-member.repository";
 import type { PrismaTransactionClient } from "../prisma-transaction-client";
@@ -39,6 +40,30 @@ export class PrismaWorkspaceMemberRepository implements WorkspaceMemberRepositor
         })
         if(!result) return null
         return this.plainToWorkspaceMemberEntity(result)
+    }
+
+    async findUserWorkspaces(userId: string): Promise<UserWorkspaceDto[]> {
+        const result = await this.prisma.workspaceMembers.findMany({
+            where: {
+                userId
+            },
+            include: {
+                workspace: {
+                    include: {
+                        workspaceMembers: true
+                    }
+                }
+            }
+        })
+
+        return result.map((membership) => ({
+            id: membership.workspace.id,
+            name: membership.workspace.name,
+            createdAt: membership.workspace.created_at,
+            updatedAt: membership.workspace.updated_at,
+            role: membership.role,
+            membersCount: membership.workspace.workspaceMembers.length
+        }))
     }
 
     private plainToWorkspaceMemberEntity(data: PrismaWorkspaceMembers) {
