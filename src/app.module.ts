@@ -6,6 +6,7 @@ import { ConfigModule } from "@nestjs/config"
 import { AuthModule } from './infra/modules/auth.module';
 import { GuardsModule } from './infra/modules/guards.module';
 import { WorkspaceModule } from './infra/modules/workspace.module';
+import { MessagingModule } from './infra/messaging/messaging.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { WorkspaceModule } from './infra/modules/workspace.module';
       isGlobal: true
     }),
     DatabaseModule,
+    MessagingModule,
     GuardsModule,
     AuthModule,
     UserModule,
