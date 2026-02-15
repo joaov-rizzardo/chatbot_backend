@@ -33,6 +33,7 @@ model Workspaces {
   updated_at       DateTime           @updatedAt
   workspaceMembers WorkspaceMembers[]
   sessions         Sessions[]
+  instances        Instances[]
 }
 
 model WorkspaceMembers {
@@ -58,4 +59,16 @@ model Sessions {
   updated_at  DateTime    @updatedAt
   user        Users       @relation(fields: [userId], references: [id])
   workspace   Workspaces? @relation(fields: [workspaceId], references: [id])
+}
+
+model Instances {
+  id           String     @id @default(uuid())
+  workspaceId  String
+  instanceName String     @unique
+  instanceId   String     @unique
+  status       String
+  qrCode       String?    @db.Text
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  workspace    Workspaces @relation(fields: [workspaceId], references: [id])
 }

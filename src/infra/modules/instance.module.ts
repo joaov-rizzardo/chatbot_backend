@@ -1,0 +1,25 @@
+import { Module } from "@nestjs/common";
+import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
+import { InstanceRepository } from "src/domain/repositories/instance.repository";
+import { PrismaInstanceRepository } from "../database/prisma/repositories/prisma-instance.repository";
+import { InstanceController } from "../http/instance/instance.controller";
+import { InstanceService } from "src/domain/services/instance/instance.service";
+import { EvolutionInstanceService } from "../evolution/evolution-instance.service";
+import { EvolutionApiService } from "../evolution/evolution-api.service";
+
+@Module({
+    providers: [
+        CreateInstanceUseCase,
+        EvolutionApiService,
+        {
+            provide: InstanceRepository,
+            useClass: PrismaInstanceRepository,
+        },
+        {
+            provide: InstanceService,
+            useClass: EvolutionInstanceService,
+        },
+    ],
+    controllers: [InstanceController],
+})
+export class InstanceModule { }
