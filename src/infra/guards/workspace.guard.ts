@@ -5,6 +5,7 @@ import { WorkspaceInsufficientPermissionsError } from "src/domain/errors/auth/wo
 import { Reflector } from "@nestjs/core";
 import { WORKSPACE_ROLES_KEY } from "./workspace-roles";
 import { TokenService } from "src/domain/services/auth/token-service";
+import { extractToken } from "./extract-token";
 
 export interface WorkspaceRequest extends UserRequest {
     workspaceId: string;
@@ -14,7 +15,6 @@ export interface WorkspaceRequest extends UserRequest {
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
 
-
     constructor(
         private readonly reflector: Reflector,
         private readonly tokenService: TokenService,
@@ -23,8 +23,8 @@ export class WorkspaceGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         let request = context.switchToHttp().getRequest<WorkspaceRequest>();
         try {
-            const authHeader = request.headers['authorization'];
-            const [_, token] = authHeader.split(' ');
+            const token = extractToken(request);
+            if (!token) throw new WorkspaceInsufficientPermissionsError()
             const decodedToken = this.tokenService.decodeAccessToken(token)
             if(!decodedToken.workspaceId || !decodedToken.workspaceRole) throw new WorkspaceInsufficientPermissionsError()
             const requiredRoles = this.reflector.get<WorkspaceMemberRoles[]>(WORKSPACE_ROLES_KEY, context.getHandler())

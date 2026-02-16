@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InvalidAccessTokenError } from "src/domain/errors/auth/invalid-access-token-error";
 import { AccessTokenPayload, TokenService } from "src/domain/services/auth/token-service";
+import { extractToken } from "./extract-token";
 
 export interface UserRequest extends Request, AccessTokenPayload { }
 
@@ -14,13 +15,8 @@ export class AuthenticationGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         let request = context.switchToHttp().getRequest<UserRequest>();
         try {
-            const authHeader = request.headers['authorization'];
-            if (!authHeader) {
-                throw new InvalidAccessTokenError()
-            }
-
-            const [bearer, token] = authHeader.split(' ');
-            if (bearer !== 'Bearer' || !token) {
+            const token = extractToken(request);
+            if (!token) {
                 throw new InvalidAccessTokenError()
             }
             if (!this.tokenService.checkAccessToken(token)) {

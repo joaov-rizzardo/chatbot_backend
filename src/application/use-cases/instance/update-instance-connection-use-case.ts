@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InstanceRepository } from "src/domain/repositories/instance.repository";
+import { ConnectionUpdateNotifier } from "src/domain/services/realtime/connection-update-notifier";
 
 interface UpdateInstanceConnectionDto {
     instanceName: string;
@@ -14,6 +15,7 @@ export class UpdateInstanceConnectionUseCase {
 
     constructor(
         private readonly instanceRepository: InstanceRepository,
+        private readonly connectionUpdateNotifier: ConnectionUpdateNotifier,
     ) { }
 
     async execute({ instanceName, status, phoneNumber }: UpdateInstanceConnectionDto) {
@@ -21,9 +23,17 @@ export class UpdateInstanceConnectionUseCase {
             this.logger.warn(`Instance "${instanceName}" not found, skipping connection update`)
             return
         }
-        return this.instanceRepository.updateByInstanceName(instanceName, {
+        const instance = await this.instanceRepository.updateByInstanceName(instanceName, {
             status,
             phoneNumber,
         });
+
+        this.connectionUpdateNotifier.notify(instance.workspaceId, {
+            instanceName,
+            status,
+            phoneNumber,
+        });
+
+        return instance;
     }
 }

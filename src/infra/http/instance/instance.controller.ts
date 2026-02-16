@@ -1,9 +1,11 @@
-import { Controller, Get, HttpCode, InternalServerErrorException, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, HttpCode, InternalServerErrorException, Post, Req, Sse, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { merge, Observable } from "rxjs";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
 import { AuthenticationGuard } from "src/infra/guards/authentication.guard";
 import { WorkspaceGuard, type WorkspaceRequest } from "src/infra/guards/workspace.guard";
+import { SseConnectionUpdateNotifier } from "src/infra/sse/notifiers/sse-connection-update-notifier";
 
 @ApiTags('instance')
 @ApiBearerAuth('access-token')
@@ -14,6 +16,7 @@ export class InstanceController {
     constructor(
         private readonly createInstanceUseCase: CreateInstanceUseCase,
         private readonly listWorkspaceInstancesUseCase: ListWorkspaceInstancesUseCase,
+        private readonly connectionUpdateNotifier: SseConnectionUpdateNotifier,
     ) { }
 
     @Get()
@@ -51,5 +54,12 @@ export class InstanceController {
                 message: "Failed to create WhatsApp instance",
             });
         }
+    }
+
+    @Sse('connection-update/subscribe')
+    subscribeConnectionUpdate(@Req() req: WorkspaceRequest): Observable<MessageEvent> {
+        return merge(
+            this.connectionUpdateNotifier.subscribe(req.workspaceId),
+        );
     }
 }

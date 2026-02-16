@@ -8,8 +8,11 @@ import { InstanceController } from "../http/instance/instance.controller";
 import { InstanceService } from "src/domain/services/instance/instance.service";
 import { EvolutionInstanceService } from "../evolution/evolution-instance.service";
 import { EvolutionApiService } from "../evolution/evolution-api.service";
+import { ConnectionUpdateNotifier } from "src/domain/services/realtime/connection-update-notifier";
+import { SseConnectionUpdateNotifier } from "../sse/notifiers/sse-connection-update-notifier";
 
 @Module({
+    imports: [],
     providers: [
         CreateInstanceUseCase,
         ListWorkspaceInstancesUseCase,
@@ -22,6 +25,11 @@ import { EvolutionApiService } from "../evolution/evolution-api.service";
         {
             provide: InstanceService,
             useClass: EvolutionInstanceService,
+        },
+        SseConnectionUpdateNotifier,
+        {
+            provide: ConnectionUpdateNotifier,
+            useExisting: SseConnectionUpdateNotifier,
         },
     ],
     controllers: [InstanceController],

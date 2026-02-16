@@ -20,7 +20,7 @@ import { MessagingModule } from './infra/messaging/messaging.module';
     AuthModule,
     UserModule,
     WorkspaceModule,
-    InstanceModule
+    InstanceModule,
   ],
   controllers: [AppController],
   providers: [],
