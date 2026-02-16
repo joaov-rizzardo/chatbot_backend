@@ -30,9 +30,17 @@ export class PrismaInstanceRepository implements InstanceRepository {
             data: {
                 status: data.status,
                 phoneNumber: data.phoneNumber,
+                qrCode: data.qrCode,
             },
         });
         return this.plainToInstanceEntity(result);
+    }
+
+    async findByInstanceName(name: string): Promise<Instance | null> {
+        const result = await this.prismaService.instances.findUnique({
+            where: { instanceName: name },
+        });
+        return result ? this.plainToInstanceEntity(result) : null;
     }
 
     async findByWorkspaceId(workspaceId: string): Promise<Instance[]> {

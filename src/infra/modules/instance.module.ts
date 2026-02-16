@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
+import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
 import { UpdateInstanceConnectionUseCase } from "src/application/use-cases/instance/update-instance-connection-use-case";
 import { InstanceRepository } from "src/domain/repositories/instance.repository";
 import { PrismaInstanceRepository } from "../database/prisma/repositories/prisma-instance.repository";
@@ -16,6 +17,7 @@ import { SseConnectionUpdateNotifier } from "../sse/notifiers/sse-connection-upd
     providers: [
         CreateInstanceUseCase,
         ListWorkspaceInstancesUseCase,
+        ReconnectInstanceUseCase,
         UpdateInstanceConnectionUseCase,
         EvolutionApiService,
         {

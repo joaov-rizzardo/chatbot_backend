@@ -13,7 +13,6 @@ export class SseConnectionUpdateNotifier extends ConnectionUpdateNotifier {
     );
 
     notify(workspaceId: string, event: ConnectionUpdateEvent): void {
-        console.log(workspaceId, event)
         this.stream.emit(workspaceId, event);
     }
 

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { CreateInstanceResult, InstanceService } from "src/domain/services/instance/instance.service";
+import { CreateInstanceResult, InstanceService, ReconnectInstanceResult } from "src/domain/services/instance/instance.service";
 import { EvolutionApiService } from "./evolution-api.service";
 
 @Injectable()
@@ -34,6 +34,23 @@ export class EvolutionInstanceService implements InstanceService {
             instanceId: data.instance?.instanceId ?? "",
             status: data.instance?.status ?? "created",
             qrCode: data.qrcode?.base64 ?? null,
+        };
+    }
+
+    async reconnectInstance(instanceName: string): Promise<ReconnectInstanceResult> {
+        const response = await this.api.fetch(`/instance/connect/${instanceName}`);
+
+        if (!response.ok) {
+            const body = await response.text();
+            this.logger.error(`Evolution API error: ${response.status} - ${body}`);
+            throw new Error(`Failed to reconnect instance on Evolution API: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        return {
+            base64: data.base64 ?? null,
+            pairingCode: data.pairingCode ?? null,
         };
     }
 }

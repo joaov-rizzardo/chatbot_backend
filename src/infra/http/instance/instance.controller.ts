@@ -1,10 +1,13 @@
-import { Controller, Get, HttpCode, InternalServerErrorException, Post, Req, Sse, UseGuards } from "@nestjs/common";
+import { ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Post, Req, Sse, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { merge, Observable } from "rxjs";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
+import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
 import { AuthenticationGuard } from "src/infra/guards/authentication.guard";
+import { InstanceGuard } from "src/infra/guards/instance.guard";
 import { WorkspaceGuard, type WorkspaceRequest } from "src/infra/guards/workspace.guard";
+import { InstanceAlreadyConnectedError } from "src/domain/errors/instance/instance-already-connected-error";
 import { SseConnectionUpdateNotifier } from "src/infra/sse/notifiers/sse-connection-update-notifier";
 
 @ApiTags('instance')
@@ -16,6 +19,7 @@ export class InstanceController {
     constructor(
         private readonly createInstanceUseCase: CreateInstanceUseCase,
         private readonly listWorkspaceInstancesUseCase: ListWorkspaceInstancesUseCase,
+        private readonly reconnectInstanceUseCase: ReconnectInstanceUseCase,
         private readonly connectionUpdateNotifier: SseConnectionUpdateNotifier,
     ) { }
 
@@ -52,6 +56,30 @@ export class InstanceController {
         } catch (error) {
             throw new InternalServerErrorException({
                 message: "Failed to create WhatsApp instance",
+            });
+        }
+    }
+
+    @Post(':instanceName/reconnect')
+    @HttpCode(200)
+    @UseGuards(InstanceGuard)
+    @ApiOperation({ summary: 'Reconectar instância WhatsApp' })
+    @ApiResponse({ status: 200, description: 'Instância reconectada' })
+    @ApiResponse({ status: 401, description: 'Não autorizado' })
+    @ApiResponse({ status: 403, description: 'Sem permissão para acessar esta instância' })
+    @ApiResponse({ status: 404, description: 'Instância não encontrada' })
+    async reconnect(@Param('instanceName') instanceName: string) {
+        try {
+            return await this.reconnectInstanceUseCase.execute({ instanceName });
+        } catch (error) {
+            if (error instanceof InstanceAlreadyConnectedError) {
+                throw new ConflictException({
+                    code: error.code,
+                    message: error.message,
+                });
+            }
+            throw new InternalServerErrorException({
+                message: "Failed to reconnect WhatsApp instance",
             });
         }
     }
