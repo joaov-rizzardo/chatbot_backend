@@ -5,6 +5,7 @@ export class Instance {
         public instanceName: string,
         public instanceId: string,
         public status: string,
+        public phoneNumber: string | null,
         public qrCode: string | null,
         public createdAt: Date,
         public updatedAt: Date

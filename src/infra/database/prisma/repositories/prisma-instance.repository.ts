@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Instance } from "src/domain/entities/instance";
-import { CreateInstanceData, InstanceRepository } from "src/domain/repositories/instance.repository";
+import { CreateInstanceData, InstanceRepository, UpdateInstanceConnectionData } from "src/domain/repositories/instance.repository";
 import { PrismaService } from "../prisma.service";
 import { Instances as PrismaInstance } from "generated/prisma/client";
 
@@ -24,6 +24,26 @@ export class PrismaInstanceRepository implements InstanceRepository {
         return this.plainToInstanceEntity(result);
     }
 
+    async updateByInstanceName(instanceName: string, data: UpdateInstanceConnectionData): Promise<Instance> {
+        const result = await this.prismaService.instances.update({
+            where: { instanceName },
+            data: {
+                status: data.status,
+                phoneNumber: data.phoneNumber,
+            },
+        });
+        return this.plainToInstanceEntity(result);
+    }
+
+    async checkIfExistsByName(name: string): Promise<boolean> {
+        const result = await this.prismaService.instances.count({
+            where: {
+                instanceName: name
+            }
+        })
+        return result > 0
+    }
+
     private plainToInstanceEntity(data: PrismaInstance): Instance {
         return new Instance(
             data.id,
@@ -31,6 +51,7 @@ export class PrismaInstanceRepository implements InstanceRepository {
             data.instanceName,
             data.instanceId,
             data.status,
+            data.phoneNumber,
             data.qrCode,
             data.created_at,
             data.updated_at,

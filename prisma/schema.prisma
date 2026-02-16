@@ -67,6 +67,7 @@ model Instances {
   instanceName String     @unique
   instanceId   String     @unique
   status       String
+  phoneNumber  String?
   qrCode       String?    @db.Text
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt

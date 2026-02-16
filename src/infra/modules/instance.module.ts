@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
+import { UpdateInstanceConnectionUseCase } from "src/application/use-cases/instance/update-instance-connection-use-case";
 import { InstanceRepository } from "src/domain/repositories/instance.repository";
 import { PrismaInstanceRepository } from "../database/prisma/repositories/prisma-instance.repository";
 import { InstanceController } from "../http/instance/instance.controller";
@@ -10,6 +11,7 @@ import { EvolutionApiService } from "../evolution/evolution-api.service";
 @Module({
     providers: [
         CreateInstanceUseCase,
+        UpdateInstanceConnectionUseCase,
         EvolutionApiService,
         {
             provide: InstanceRepository,
@@ -21,5 +23,6 @@ import { EvolutionApiService } from "../evolution/evolution-api.service";
         },
     ],
     controllers: [InstanceController],
+    exports: [UpdateInstanceConnectionUseCase],
 })
 export class InstanceModule { }
