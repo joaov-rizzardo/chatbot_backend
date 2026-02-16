@@ -72,4 +72,6 @@ model Instances {
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
   workspace    Workspaces @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
 }

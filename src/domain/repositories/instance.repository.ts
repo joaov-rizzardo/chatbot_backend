@@ -17,4 +17,5 @@ export abstract class InstanceRepository {
     abstract create(data: CreateInstanceData): Promise<Instance>
     abstract checkIfExistsByName(name: string): Promise<boolean>
     abstract updateByInstanceName(instanceName: string, data: UpdateInstanceConnectionData): Promise<Instance>
+    abstract findByWorkspaceId(workspaceId: string): Promise<Instance[]>
 }

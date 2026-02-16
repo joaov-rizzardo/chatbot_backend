@@ -35,6 +35,13 @@ export class PrismaInstanceRepository implements InstanceRepository {
         return this.plainToInstanceEntity(result);
     }
 
+    async findByWorkspaceId(workspaceId: string): Promise<Instance[]> {
+        const results = await this.prismaService.instances.findMany({
+            where: { workspaceId },
+        });
+        return results.map((r) => this.plainToInstanceEntity(r));
+    }
+
     async checkIfExistsByName(name: string): Promise<boolean> {
         const result = await this.prismaService.instances.count({
             where: {
