@@ -3,6 +3,7 @@ import { CreateInstanceUseCase } from "src/application/use-cases/instance/create
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
 import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
 import { UpdateInstanceConnectionUseCase } from "src/application/use-cases/instance/update-instance-connection-use-case";
+import { UpdateInstanceUseCase } from "src/application/use-cases/instance/update-instance-use-case";
 import { InstanceRepository } from "src/domain/repositories/instance.repository";
 import { PrismaInstanceRepository } from "../database/prisma/repositories/prisma-instance.repository";
 import { InstanceController } from "../http/instance/instance.controller";
@@ -19,6 +20,7 @@ import { SseConnectionUpdateNotifier } from "../sse/notifiers/sse-connection-upd
         ListWorkspaceInstancesUseCase,
         ReconnectInstanceUseCase,
         UpdateInstanceConnectionUseCase,
+        UpdateInstanceUseCase,
         EvolutionApiService,
         {
             provide: InstanceRepository,

@@ -9,6 +9,10 @@ export type CreateInstanceData = {
     qrCode: string | null;
 }
 
+export type UpdateInstanceData = {
+    name: string;
+}
+
 export type UpdateInstanceConnectionData = {
     status: string;
     phoneNumber?: string | null;
@@ -18,6 +22,7 @@ export type UpdateInstanceConnectionData = {
 export abstract class InstanceRepository {
     abstract create(data: CreateInstanceData): Promise<Instance>
     abstract checkIfExistsByName(name: string): Promise<boolean>
+    abstract update(instanceName: string, data: UpdateInstanceData): Promise<Instance>
     abstract updateByInstanceName(instanceName: string, data: UpdateInstanceConnectionData): Promise<Instance>
     abstract findByInstanceName(name: string): Promise<Instance | null>
     abstract findByWorkspaceId(workspaceId: string): Promise<Instance[]>

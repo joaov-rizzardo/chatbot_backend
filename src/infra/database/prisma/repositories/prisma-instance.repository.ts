@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Instance } from "src/domain/entities/instance";
-import { CreateInstanceData, InstanceRepository, UpdateInstanceConnectionData } from "src/domain/repositories/instance.repository";
+import { CreateInstanceData, InstanceRepository, UpdateInstanceConnectionData, UpdateInstanceData } from "src/domain/repositories/instance.repository";
 import { PrismaService } from "../prisma.service";
 import { Instances as PrismaInstance } from "generated/prisma/client";
 
@@ -20,6 +20,16 @@ export class PrismaInstanceRepository implements InstanceRepository {
                 instanceId: data.instanceId,
                 status: data.status,
                 qrCode: data.qrCode,
+            },
+        });
+        return this.plainToInstanceEntity(result);
+    }
+
+    async update(instanceName: string, data: UpdateInstanceData): Promise<Instance> {
+        const result = await this.prismaService.instances.update({
+            where: { instanceName },
+            data: {
+                name: data.name,
             },
         });
         return this.plainToInstanceEntity(result);

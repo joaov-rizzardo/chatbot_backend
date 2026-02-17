@@ -1,10 +1,12 @@
-import { Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Post, Req, Sse, UseGuards } from "@nestjs/common";
+import { Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Patch, Post, Req, Sse, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { merge, Observable } from "rxjs";
 import { CreateInstanceDto } from "src/application/dtos/instance/create-instance-dto";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
+import { UpdateInstanceDto } from "src/application/dtos/instance/update-instance-dto";
 import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
+import { UpdateInstanceUseCase } from "src/application/use-cases/instance/update-instance-use-case";
 import { AuthenticationGuard } from "src/infra/guards/authentication.guard";
 import { InstanceGuard } from "src/infra/guards/instance.guard";
 import { WorkspaceGuard, type WorkspaceRequest } from "src/infra/guards/workspace.guard";
@@ -21,6 +23,7 @@ export class InstanceController {
         private readonly createInstanceUseCase: CreateInstanceUseCase,
         private readonly listWorkspaceInstancesUseCase: ListWorkspaceInstancesUseCase,
         private readonly reconnectInstanceUseCase: ReconnectInstanceUseCase,
+        private readonly updateInstanceUseCase: UpdateInstanceUseCase,
         private readonly connectionUpdateNotifier: SseConnectionUpdateNotifier,
     ) { }
 
@@ -58,6 +61,24 @@ export class InstanceController {
         } catch (error) {
             throw new InternalServerErrorException({
                 message: "Failed to create WhatsApp instance",
+            });
+        }
+    }
+
+    @Patch(':instanceName')
+    @HttpCode(200)
+    @UseGuards(InstanceGuard)
+    @ApiOperation({ summary: 'Atualizar instância WhatsApp' })
+    @ApiResponse({ status: 200, description: 'Instância atualizada' })
+    @ApiResponse({ status: 401, description: 'Não autorizado' })
+    @ApiResponse({ status: 403, description: 'Sem permissão para acessar esta instância' })
+    @ApiResponse({ status: 404, description: 'Instância não encontrada' })
+    async update(@Param('instanceName') instanceName: string, @Body() { name }: UpdateInstanceDto) {
+        try {
+            return await this.updateInstanceUseCase.execute({ instanceName, name });
+        } catch (error) {
+            throw new InternalServerErrorException({
+                message: "Failed to update WhatsApp instance",
             });
         }
     }
