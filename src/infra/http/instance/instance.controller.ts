@@ -1,10 +1,11 @@
-import { Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Patch, Post, Req, Sse, UseGuards } from "@nestjs/common";
+import { Body, ConflictException, Controller, Delete, Get, HttpCode, InternalServerErrorException, Param, Patch, Post, Req, Sse, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { merge, Observable } from "rxjs";
 import { CreateInstanceDto } from "src/application/dtos/instance/create-instance-dto";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
 import { UpdateInstanceDto } from "src/application/dtos/instance/update-instance-dto";
+import { DeleteInstanceUseCase } from "src/application/use-cases/instance/delete-instance-use-case";
 import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
 import { UpdateInstanceUseCase } from "src/application/use-cases/instance/update-instance-use-case";
 import { AuthenticationGuard } from "src/infra/guards/authentication.guard";
@@ -24,6 +25,7 @@ export class InstanceController {
         private readonly listWorkspaceInstancesUseCase: ListWorkspaceInstancesUseCase,
         private readonly reconnectInstanceUseCase: ReconnectInstanceUseCase,
         private readonly updateInstanceUseCase: UpdateInstanceUseCase,
+        private readonly deleteInstanceUseCase: DeleteInstanceUseCase,
         private readonly connectionUpdateNotifier: SseConnectionUpdateNotifier,
     ) { }
 
@@ -79,6 +81,24 @@ export class InstanceController {
         } catch (error) {
             throw new InternalServerErrorException({
                 message: "Failed to update WhatsApp instance",
+            });
+        }
+    }
+
+    @Delete(':instanceName')
+    @HttpCode(204)
+    @UseGuards(InstanceGuard)
+    @ApiOperation({ summary: 'Deletar instância WhatsApp' })
+    @ApiResponse({ status: 204, description: 'Instância deletada' })
+    @ApiResponse({ status: 401, description: 'Não autorizado' })
+    @ApiResponse({ status: 403, description: 'Sem permissão para acessar esta instância' })
+    @ApiResponse({ status: 404, description: 'Instância não encontrada' })
+    async delete(@Param('instanceName') instanceName: string) {
+        try {
+            await this.deleteInstanceUseCase.execute(instanceName);
+        } catch (error) {
+            throw new InternalServerErrorException({
+                message: "Failed to delete WhatsApp instance",
             });
         }
     }

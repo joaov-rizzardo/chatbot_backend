@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
 import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
+import { DeleteInstanceUseCase } from "src/application/use-cases/instance/delete-instance-use-case";
 import { UpdateInstanceConnectionUseCase } from "src/application/use-cases/instance/update-instance-connection-use-case";
 import { UpdateInstanceUseCase } from "src/application/use-cases/instance/update-instance-use-case";
 import { InstanceRepository } from "src/domain/repositories/instance.repository";
@@ -19,6 +20,7 @@ import { SseConnectionUpdateNotifier } from "../sse/notifiers/sse-connection-upd
         CreateInstanceUseCase,
         ListWorkspaceInstancesUseCase,
         ReconnectInstanceUseCase,
+        DeleteInstanceUseCase,
         UpdateInstanceConnectionUseCase,
         UpdateInstanceUseCase,
         EvolutionApiService,

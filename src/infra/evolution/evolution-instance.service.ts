@@ -37,6 +37,18 @@ export class EvolutionInstanceService implements InstanceService {
         };
     }
 
+    async deleteInstance(instanceName: string): Promise<void> {
+        const response = await this.api.fetch(`/instance/delete/${instanceName}`, {
+            method: "DELETE",
+        });
+
+        if (!response.ok) {
+            const body = await response.text();
+            this.logger.error(`Evolution API error: ${response.status} - ${body}`);
+            throw new Error(`Failed to delete instance on Evolution API: ${response.status}`);
+        }
+    }
+
     async reconnectInstance(instanceName: string): Promise<ReconnectInstanceResult> {
         const response = await this.api.fetch(`/instance/connect/${instanceName}`);
 

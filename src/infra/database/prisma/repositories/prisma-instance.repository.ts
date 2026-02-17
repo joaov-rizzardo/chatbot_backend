@@ -61,6 +61,12 @@ export class PrismaInstanceRepository implements InstanceRepository {
         return results.map((r) => this.plainToInstanceEntity(r));
     }
 
+    async delete(instanceName: string): Promise<void> {
+        await this.prismaService.instances.delete({
+            where: { instanceName },
+        });
+    }
+
     async checkIfExistsByName(name: string): Promise<boolean> {
         const result = await this.prismaService.instances.count({
             where: {

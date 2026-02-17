@@ -13,4 +13,5 @@ export type ReconnectInstanceResult = {
 export abstract class InstanceService {
     abstract createInstance(instanceName: string): Promise<CreateInstanceResult>
     abstract reconnectInstance(instanceName: string): Promise<ReconnectInstanceResult>
+    abstract deleteInstance(instanceName: string): Promise<void>
 }

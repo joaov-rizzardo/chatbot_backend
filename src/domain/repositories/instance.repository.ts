@@ -26,4 +26,5 @@ export abstract class InstanceRepository {
     abstract updateByInstanceName(instanceName: string, data: UpdateInstanceConnectionData): Promise<Instance>
     abstract findByInstanceName(name: string): Promise<Instance | null>
     abstract findByWorkspaceId(workspaceId: string): Promise<Instance[]>
+    abstract delete(instanceName: string): Promise<void>
 }
