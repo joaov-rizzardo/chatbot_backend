@@ -2,6 +2,7 @@ import { Instance } from "../entities/instance";
 
 export type CreateInstanceData = {
     workspaceId: string;
+    name: string;
     instanceName: string;
     instanceId: string;
     status: string;

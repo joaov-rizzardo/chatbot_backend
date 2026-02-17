@@ -15,6 +15,7 @@ export class PrismaInstanceRepository implements InstanceRepository {
         const result = await this.prismaService.instances.create({
             data: {
                 workspaceId: data.workspaceId,
+                name: data.name,
                 instanceName: data.instanceName,
                 instanceId: data.instanceId,
                 status: data.status,
@@ -63,6 +64,7 @@ export class PrismaInstanceRepository implements InstanceRepository {
         return new Instance(
             data.id,
             data.workspaceId,
+            data.name,
             data.instanceName,
             data.instanceId,
             data.status,

@@ -2,6 +2,7 @@ export class Instance {
     constructor(
         public id: string,
         public workspaceId: string,
+        public name: string,
         public instanceName: string,
         public instanceId: string,
         public status: string,

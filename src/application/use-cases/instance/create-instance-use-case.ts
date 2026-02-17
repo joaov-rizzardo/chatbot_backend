@@ -12,13 +12,14 @@ export class CreateInstanceUseCase {
         private readonly instanceRepository: InstanceRepository,
     ) { }
 
-    async execute({ workspaceId }: CreateInstanceDto) {
+    async execute({ workspaceId, name }: CreateInstanceDto) {
         const instanceName = `ws-${workspaceId}-${randomUUID()}`
 
         const result = await this.instanceService.createInstance(instanceName)
 
         const instance = await this.instanceRepository.create({
             workspaceId,
+            name,
             instanceName: result.instanceName,
             instanceId: result.instanceId,
             status: result.status,

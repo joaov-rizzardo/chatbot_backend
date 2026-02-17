@@ -64,6 +64,7 @@ model Sessions {
 model Instances {
   id           String     @id @default(uuid())
   workspaceId  String
+  name         String
   instanceName String     @unique
   instanceId   String     @unique
   status       String

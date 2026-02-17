@@ -1,6 +1,7 @@
-import { ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Post, Req, Sse, UseGuards } from "@nestjs/common";
+import { Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Param, Post, Req, Sse, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { merge, Observable } from "rxjs";
+import { CreateInstanceDto } from "src/application/dtos/instance/create-instance-dto";
 import { CreateInstanceUseCase } from "src/application/use-cases/instance/create-instance-use-case";
 import { ListWorkspaceInstancesUseCase } from "src/application/use-cases/instance/list-workspace-instances-use-case";
 import { ReconnectInstanceUseCase } from "src/application/use-cases/instance/reconnect-instance-use-case";
@@ -47,10 +48,11 @@ export class InstanceController {
     @ApiResponse({ status: 201, description: 'Instância criada' })
     @ApiResponse({ status: 401, description: 'Não autorizado' })
     @ApiResponse({ status: 403, description: 'Workspace não conectado' })
-    async create(@Req() req: WorkspaceRequest) {
+    async create(@Body() { name }: CreateInstanceDto, @Req() req: WorkspaceRequest) {
         try {
             const result = await this.createInstanceUseCase.execute({
                 workspaceId: req.workspaceId,
+                name,
             });
             return result;
         } catch (error) {
