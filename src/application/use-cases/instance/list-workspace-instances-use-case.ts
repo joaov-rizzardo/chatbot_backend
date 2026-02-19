@@ -12,6 +12,8 @@ export class ListWorkspaceInstancesUseCase {
     async execute({ workspaceId }: ListWorkspaceInstancesDto) {
         const instances = await this.instanceRepository.findByWorkspaceId(workspaceId)
 
-        return instances.map(({ qrCode, ...rest }) => rest)
+        return instances
+            .sort((a, b) => (a.status === "open" ? -1 : 1) - (b.status === "open" ? -1 : 1))
+            .map(({ qrCode, ...rest }) => rest)
     }
 }
