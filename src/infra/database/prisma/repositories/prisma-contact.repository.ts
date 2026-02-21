@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Contact } from "src/domain/entities/contact";
-import { ContactRepository, CreateContactData } from "src/domain/repositories/contact.repository";
+import { ContactRepository, CreateContactData, UpdateContactData } from "src/domain/repositories/contact.repository";
 import { PrismaService } from "../prisma.service";
 import { Contacts as PrismaContact } from "generated/prisma/client";
 
@@ -31,6 +31,39 @@ export class PrismaContactRepository implements ContactRepository {
             },
         });
         return result ? this.toEntity(result) : null;
+    }
+
+    async findById(id: string): Promise<Contact | null> {
+        const result = await this.prismaService.contacts.findUnique({
+            where: { id },
+        });
+        return result ? this.toEntity(result) : null;
+    }
+
+    async update(id: string, data: UpdateContactData): Promise<Contact> {
+        const result = await this.prismaService.contacts.update({
+            where: { id },
+            data: {
+                name: data.name,
+                lastName: data.lastName,
+                email: data.email,
+            },
+        });
+        return this.toEntity(result);
+    }
+
+    async delete(id: string): Promise<void> {
+        await this.prismaService.contacts.delete({
+            where: { id },
+        });
+    }
+
+    async findByWorkspaceId(workspaceId: string): Promise<Contact[]> {
+        const results = await this.prismaService.contacts.findMany({
+            where: { workspaceId },
+            orderBy: { name: 'asc' },
+        });
+        return results.map((r) => this.toEntity(r));
     }
 
     private toEntity(data: PrismaContact): Contact {
