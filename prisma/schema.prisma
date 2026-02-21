@@ -34,6 +34,7 @@ model Workspaces {
   workspaceMembers WorkspaceMembers[]
   sessions         Sessions[]
   instances        Instances[]
+  contacts         Contacts[]
 }
 
 model WorkspaceMembers {
@@ -75,4 +76,18 @@ model Instances {
   workspace    Workspaces @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
+}
+
+model Contacts {
+  id          String     @id @default(uuid())
+  workspaceId String
+  phoneNumber String
+  name        String
+  lastName    String?
+  email       String?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  workspace   Workspaces @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, phoneNumber])
 }

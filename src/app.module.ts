@@ -7,6 +7,7 @@ import { AuthModule } from './infra/modules/auth.module';
 import { GuardsModule } from './infra/modules/guards.module';
 import { WorkspaceModule } from './infra/modules/workspace.module';
 import { InstanceModule } from './infra/modules/instance.module';
+import { ContactModule } from './infra/modules/contact.module';
 import { MessagingModule } from './infra/messaging/messaging.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { MessagingModule } from './infra/messaging/messaging.module';
     UserModule,
     WorkspaceModule,
     InstanceModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [],
