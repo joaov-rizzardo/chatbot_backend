@@ -5,6 +5,8 @@ import { PrismaTransactionClient } from "./prisma-transaction-client";
 import { PrismaWorkspaceRepository } from "./repositories/prisma-workspace.repository";
 import { PrismaWorkspaceMemberRepository } from "./repositories/prisma-workspace-member.repository";
 import { PrismaUserRepository } from "./repositories/prisma-user.repository";
+import { PrismaContactTagRepository } from "./repositories/prisma-contact-tag.repository";
+import { PrismaTagRepository } from "./repositories/prisma-tag.repository";
 
 @Injectable()
 export class PrismaTransactionManager implements TransactionManager {
@@ -24,7 +26,9 @@ export class PrismaTransactionManager implements TransactionManager {
         return {
             userRepository: new PrismaUserRepository(this.prisma, tx),
             workspaceRepository: new PrismaWorkspaceRepository(this.prisma, tx),
-            workspaceMemberRepository: new PrismaWorkspaceMemberRepository(this.prisma, tx)
+            workspaceMemberRepository: new PrismaWorkspaceMemberRepository(this.prisma, tx),
+            contactTagRepository: new PrismaContactTagRepository(this.prisma, tx),
+            tagRepository: new PrismaTagRepository(this.prisma, tx),
         }
     }
 }

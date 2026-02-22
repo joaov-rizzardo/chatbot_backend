@@ -1,12 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { TagRepository } from "src/domain/repositories/tag.repository";
 import { TagNotFoundError } from "src/domain/errors/tag/tag-not-found-error";
+import { TransactionManager } from "src/domain/services/database/transaction-manager";
 
 @Injectable()
 export class DeleteTagUseCase {
 
     constructor(
         private readonly tagRepository: TagRepository,
+        private readonly transactionManager: TransactionManager,
     ) { }
 
     async execute(id: string, workspaceId: string) {
@@ -16,6 +18,9 @@ export class DeleteTagUseCase {
             throw new TagNotFoundError();
         }
 
-        await this.tagRepository.delete(id);
+        await this.transactionManager.runInTransaction(async (uow) => {
+            await uow.contactTagRepository.deleteByTagId(id);
+            await uow.tagRepository.delete(id);
+        });
     }
 }

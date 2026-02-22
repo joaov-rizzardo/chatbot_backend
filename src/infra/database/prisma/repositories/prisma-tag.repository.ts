@@ -1,7 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
 import { Tag } from "src/domain/entities/tag";
 import { TagRepository, CreateTagData, UpdateTagData } from "src/domain/repositories/tag.repository";
 import { PrismaService } from "../prisma.service";
+import type { PrismaTransactionClient } from "../prisma-transaction-client";
 import { Tags as PrismaTag } from "generated/prisma/client";
 
 @Injectable()
@@ -9,10 +10,15 @@ export class PrismaTagRepository implements TagRepository {
 
     constructor(
         private readonly prismaService: PrismaService,
+        @Optional() private readonly transactionClient?: PrismaTransactionClient
     ) { }
 
+    private get prisma() {
+        return this.transactionClient !== undefined ? this.transactionClient : this.prismaService;
+    }
+
     async create(data: CreateTagData): Promise<Tag> {
-        const result = await this.prismaService.tags.create({
+        const result = await this.prisma.tags.create({
             data: {
                 workspaceId: data.workspaceId,
                 name: data.name,
@@ -24,14 +30,14 @@ export class PrismaTagRepository implements TagRepository {
     }
 
     async findById(id: string): Promise<Tag | null> {
-        const result = await this.prismaService.tags.findUnique({
+        const result = await this.prisma.tags.findUnique({
             where: { id },
         });
         return result ? this.toEntity(result) : null;
     }
 
     async findByWorkspaceAndName(workspaceId: string, name: string): Promise<Tag | null> {
-        const result = await this.prismaService.tags.findUnique({
+        const result = await this.prisma.tags.findUnique({
             where: {
                 workspaceId_name: { workspaceId, name },
             },
@@ -40,7 +46,7 @@ export class PrismaTagRepository implements TagRepository {
     }
 
     async findByWorkspaceId(workspaceId: string): Promise<Tag[]> {
-        const results = await this.prismaService.tags.findMany({
+        const results = await this.prisma.tags.findMany({
             where: { workspaceId },
             orderBy: { name: 'asc' },
             include: {
@@ -51,7 +57,7 @@ export class PrismaTagRepository implements TagRepository {
     }
 
     async update(id: string, data: UpdateTagData): Promise<Tag> {
-        const result = await this.prismaService.tags.update({
+        const result = await this.prisma.tags.update({
             where: { id },
             data: {
                 name: data.name,
@@ -63,7 +69,7 @@ export class PrismaTagRepository implements TagRepository {
     }
 
     async delete(id: string): Promise<void> {
-        await this.prismaService.tags.delete({
+        await this.prisma.tags.delete({
             where: { id },
         });
     }
