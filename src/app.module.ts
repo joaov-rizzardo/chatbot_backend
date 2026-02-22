@@ -9,6 +9,7 @@ import { WorkspaceModule } from './infra/modules/workspace.module';
 import { InstanceModule } from './infra/modules/instance.module';
 import { ContactModule } from './infra/modules/contact.module';
 import { TagModule } from './infra/modules/tag.module';
+import { ContactTagModule } from './infra/modules/contact-tag.module';
 import { MessagingModule } from './infra/messaging/messaging.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { MessagingModule } from './infra/messaging/messaging.module';
     InstanceModule,
     ContactModule,
     TagModule,
+    ContactTagModule,
   ],
   controllers: [AppController],
   providers: [],
