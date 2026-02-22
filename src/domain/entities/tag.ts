@@ -7,5 +7,6 @@ export class Tag {
         public description: string | null,
         public createdAt: Date,
         public updatedAt: Date,
+        public usageCount: number = 0,
     ) { }
 }

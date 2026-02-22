@@ -80,29 +80,42 @@ model Instances {
 }
 
 model Contacts {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   workspaceId String
   phoneNumber String
   name        String
   lastName    String?
   email       String?
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
-  workspace   Workspaces @relation(fields: [workspaceId], references: [id])
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  workspace   Workspaces   @relation(fields: [workspaceId], references: [id])
+  tags        ContactTags[]
 
   @@unique([workspaceId, phoneNumber])
 }
 
 model Tags {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   workspaceId String
   name        String
   color       String
   description String?
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
-  workspace   Workspaces @relation(fields: [workspaceId], references: [id])
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  workspace   Workspaces   @relation(fields: [workspaceId], references: [id])
+  contacts    ContactTags[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
+}
+
+model ContactTags {
+  contactId  String
+  tagId      String
+  assignedAt DateTime @default(now())
+  contact    Contacts @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag        Tags     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@index([tagId])
 }

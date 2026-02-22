@@ -43,6 +43,9 @@ export class PrismaTagRepository implements TagRepository {
         const results = await this.prismaService.tags.findMany({
             where: { workspaceId },
             orderBy: { name: 'asc' },
+            include: {
+                _count: { select: { contacts: true } },
+            },
         });
         return results.map((r) => this.toEntity(r));
     }
@@ -65,7 +68,7 @@ export class PrismaTagRepository implements TagRepository {
         });
     }
 
-    private toEntity(data: PrismaTag): Tag {
+    private toEntity(data: PrismaTag & { _count?: { contacts: number } }): Tag {
         return new Tag(
             data.id,
             data.workspaceId,
@@ -74,6 +77,7 @@ export class PrismaTagRepository implements TagRepository {
             data.description,
             data.created_at,
             data.updated_at,
+            data._count?.contacts ?? 0,
         );
     }
 }
