@@ -62,8 +62,27 @@ export class PrismaContactRepository implements ContactRepository {
         const results = await this.prismaService.contacts.findMany({
             where: { workspaceId },
             orderBy: { name: 'asc' },
+            include: {
+                tags: {
+                    include: {
+                        tag: {
+                            select: { id: true, name: true, color: true },
+                        },
+                    },
+                },
+            },
         });
-        return results.map((r) => this.toEntity(r));
+        return results.map((r) => new Contact(
+            r.id,
+            r.workspaceId,
+            r.phoneNumber,
+            r.name,
+            r.lastName,
+            r.email,
+            r.created_at,
+            r.updated_at,
+            r.tags.map((ct) => ({ id: ct.tag.id, name: ct.tag.name, color: ct.tag.color })),
+        ));
     }
 
     private toEntity(data: PrismaContact): Contact {

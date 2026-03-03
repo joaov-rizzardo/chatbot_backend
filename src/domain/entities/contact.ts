@@ -1,3 +1,9 @@
+export interface ContactTag {
+    id: string;
+    name: string;
+    color: string;
+}
+
 export class Contact {
     constructor(
         public id: string,
@@ -8,5 +14,6 @@ export class Contact {
         public email: string | null,
         public createdAt: Date,
         public updatedAt: Date,
+        public tags: ContactTag[] = [],
     ) { }
 }
