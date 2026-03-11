@@ -36,6 +36,7 @@ model Workspaces {
   instances        Instances[]
   contacts         Contacts[]
   tags             Tags[]
+  conversations    Conversations[]
 }
 
 model WorkspaceMembers {
@@ -80,29 +81,30 @@ model Instances {
 }
 
 model Contacts {
-  id          String       @id @default(uuid())
-  workspaceId String
-  phoneNumber String
-  name        String
-  lastName    String?
-  email       String?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  workspace   Workspaces   @relation(fields: [workspaceId], references: [id])
-  tags        ContactTags[]
+  id            String          @id @default(uuid())
+  workspaceId   String
+  phoneNumber   String
+  name          String
+  lastName      String?
+  email         String?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  workspace     Workspaces      @relation(fields: [workspaceId], references: [id])
+  tags          ContactTags[]
+  conversations Conversations[]
 
   @@unique([workspaceId, phoneNumber])
 }
 
 model Tags {
-  id          String       @id @default(uuid())
+  id          String        @id @default(uuid())
   workspaceId String
   name        String
   color       String
   description String?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  workspace   Workspaces   @relation(fields: [workspaceId], references: [id])
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  workspace   Workspaces    @relation(fields: [workspaceId], references: [id])
   contacts    ContactTags[]
 
   @@unique([workspaceId, name])
@@ -118,4 +120,51 @@ model ContactTags {
 
   @@id([contactId, tagId])
   @@index([tagId])
+}
+
+model Conversations {
+  id                  String             @id @default(uuid())
+  workspaceId         String
+  contactId           String
+  instancePhoneNumber String
+  status              ConversationStatus @default(OPEN)
+  lastMessageAt       DateTime?
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  workspace           Workspaces         @relation(fields: [workspaceId], references: [id])
+  contact             Contacts           @relation(fields: [contactId], references: [id])
+  messages            Messages[]
+
+  @@index([workspaceId])
+  @@index([contactId])
+  @@index([instancePhoneNumber])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+model Messages {
+  id             String           @id @default(uuid())
+  conversationId String
+  content        String           @db.Text
+  direction      MessageDirection
+  externalId     String?          @unique
+  read           Boolean          @default(false)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  conversation   Conversations    @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@index([conversationId, created_at])
+  @@index([read])
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
 }
