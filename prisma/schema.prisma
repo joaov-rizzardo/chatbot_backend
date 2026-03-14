@@ -149,22 +149,22 @@ enum ConversationStatus {
 }
 
 model Messages {
-  id             String           @id @default(uuid())
+  id             String                  @id @default(uuid())
   conversationId String
-  content        String           @db.Text
-  caption        String?          @db.Text
-  thumbnailUrl   String?
+  content        String                  @db.Text
+  caption        String?                 @db.Text
   type           MessageType
   direction      MessageDirection
-  externalId     String           @unique
-  sent_at        DateTime
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
+  externalId     String                  @unique
   replyToId      String?
-  conversation   Conversations    @relation(fields: [conversationId], references: [id])
-  replyTo        Messages?        @relation("MessageReplies", fields: [replyToId], references: [externalId])
-  replies        Messages[]       @relation("MessageReplies")
+  sent_at        DateTime
+  created_at     DateTime                @default(now())
+  updated_at     DateTime                @updatedAt
+  conversation   Conversations           @relation(fields: [conversationId], references: [id])
+  replyTo        Messages?               @relation("MessageReplies", fields: [replyToId], references: [externalId])
+  replies        Messages[]              @relation("MessageReplies")
   media          MessageMedia?
+  thumbnail      MessageThumbnail?
   decryption     MessageMediaDecryption?
 
   @@index([conversationId])
@@ -187,13 +187,41 @@ model MessageMediaDecryption {
 }
 
 model MessageMedia {
-  id         String   @id @default(uuid())
-  messageId  String   @unique
-  url        String
-  mimeType   String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  message    Messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id              String          @id @default(uuid())
+  messageId       String          @unique
+  url             String
+  storageProvider StorageProvider
+  storageKey      String
+  mimeType        String
+  fileSize        Int?
+  fileName        String?
+  duration        Int?
+  width           Int?
+  height          Int?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  message         Messages        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model MessageThumbnail {
+  id              String          @id @default(uuid())
+  messageId       String          @unique
+  url             String
+  storageProvider StorageProvider
+  storageKey      String
+  mimeType        String
+  fileSize        Int?
+  width           Int?
+  height          Int?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  message         Messages        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+enum StorageProvider {
+  AWS_S3
+  CLOUDFLARE_R2
+  LOCAL_DISK
 }
 
 enum MessageType {
