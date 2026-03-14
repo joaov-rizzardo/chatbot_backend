@@ -39,6 +39,6 @@ import { SseConnectionUpdateNotifier } from "../sse/notifiers/sse-connection-upd
         },
     ],
     controllers: [InstanceController],
-    exports: [UpdateInstanceConnectionUseCase],
+    exports: [UpdateInstanceConnectionUseCase, InstanceRepository],
 })
 export class InstanceModule { }
