@@ -152,16 +152,43 @@ model Messages {
   id             String           @id @default(uuid())
   conversationId String
   content        String           @db.Text
+  caption        String?          @db.Text
+  type           MessageType
   direction      MessageDirection
-  externalId     String?          @unique
-  read           Boolean          @default(false)
+  externalId     String           @unique
+  sent_at        DateTime
   created_at     DateTime         @default(now())
   updated_at     DateTime         @updatedAt
+  replyToId      String?
   conversation   Conversations    @relation(fields: [conversationId], references: [id])
+  replyTo        Messages?        @relation("MessageReplies", fields: [replyToId], references: [externalId])
+  replies        Messages[]       @relation("MessageReplies")
+  media          MessageMedia?
 
   @@index([conversationId])
   @@index([conversationId, created_at])
-  @@index([read])
+  @@index([externalId])
+  @@index([replyToId])
+}
+
+model MessageMedia {
+  id           String   @id @default(uuid())
+  messageId    String   @unique
+  url          String
+  mimeType     String
+  fileName     String?
+  fileSize     Int?
+  thumbnailUrl String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  message      Messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
 }
 
 enum MessageDirection {
