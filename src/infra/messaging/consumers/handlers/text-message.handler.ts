@@ -4,7 +4,7 @@ import { TextMessageData } from '../types/text-message.types';
 import { MessageHandler } from './message-handler.interface';
 
 export class TextMessageHandler implements MessageHandler {
-    build(instanceName: string, data: MessagesUpsertData): ProcessInboundMessageDto {
+    async build(instanceName: string, data: MessagesUpsertData): Promise<ProcessInboundMessageDto> {
         const { key, pushName, contextInfo, messageTimestamp, message } = data as TextMessageData;
         return {
             instanceName,

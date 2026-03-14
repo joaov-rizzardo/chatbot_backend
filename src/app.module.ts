@@ -11,6 +11,7 @@ import { ContactModule } from './infra/modules/contact.module';
 import { TagModule } from './infra/modules/tag.module';
 import { ContactTagModule } from './infra/modules/contact-tag.module';
 import { MessagingModule } from './infra/messaging/messaging.module';
+import { StorageModule } from './infra/storage/storage.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MessagingModule } from './infra/messaging/messaging.module';
       isGlobal: true
     }),
     DatabaseModule,
+    StorageModule,
     MessagingModule,
     GuardsModule,
     AuthModule,

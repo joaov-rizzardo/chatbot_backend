@@ -8,7 +8,7 @@ function byteObjectToBase64(bytes: ByteObject): string {
 }
 
 export class AudioMessageHandler implements MessageHandler {
-    build(instanceName: string, data: MessagesUpsertData): ProcessInboundMessageDto {
+    async build(instanceName: string, data: MessagesUpsertData): Promise<ProcessInboundMessageDto> {
         const { key, pushName, contextInfo, messageTimestamp, message } = data as AudioMessageData;
         const { url, mimetype, mediaKey, fileEncSha256, fileLength } = message.audioMessage;
         return {

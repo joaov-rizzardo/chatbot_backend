@@ -12,6 +12,22 @@ export class MessageMedia {
     ) {}
 }
 
+export class MessageThumbnail {
+    constructor(
+        public id: string,
+        public messageId: string,
+        public url: string,
+        public storageProvider: string,
+        public storageKey: string,
+        public mimeType: string,
+        public fileSize: number | null,
+        public width: number | null,
+        public height: number | null,
+        public createdAt: Date,
+        public updatedAt: Date,
+    ) {}
+}
+
 export class MessageMediaDecryption {
     constructor(
         public id: string,
@@ -38,9 +54,9 @@ export class Message {
         public createdAt: Date,
         public updatedAt: Date,
         public caption: string | null,
-        public thumbnailUrl: string | null,
         public replyToId: string | null,
         public media?: MessageMedia,
+        public thumbnail?: MessageThumbnail,
         public decryption?: MessageMediaDecryption,
     ) {}
 }

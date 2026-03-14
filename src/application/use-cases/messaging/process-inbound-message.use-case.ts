@@ -6,10 +6,21 @@ import { TransactionManager, UnitOfWork } from 'src/domain/services/database/tra
 import { Instance } from 'src/domain/entities/instance';
 import { Contact } from 'src/domain/entities/contact';
 import { Conversation } from 'src/domain/entities/conversation';
+import { StorageProvider } from 'src/domain/services/storage/storage.service';
 
 export interface TextMessageContent {
     type: 'TEXT';
     text: string;
+}
+
+export interface ThumbnailData {
+    url: string;
+    storageKey: string;
+    storageProvider: StorageProvider;
+    mimeType: string;
+    fileSize?: number;
+    width?: number;
+    height?: number;
 }
 
 export interface MediaMessageContent {
@@ -20,6 +31,7 @@ export interface MediaMessageContent {
     fileEncSha256: string;
     fileSize?: number;
     caption?: string;
+    thumbnail?: ThumbnailData;
 }
 
 export type InboundMessageContent = TextMessageContent | MediaMessageContent;
@@ -125,11 +137,12 @@ export class ProcessInboundMessageUseCase {
         if (dto.content.type === 'TEXT') {
             await uow.messageRepository.create({ ...base, content: dto.content.text });
         } else {
-            const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption } = dto.content;
+            const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption, thumbnail } = dto.content;
             await uow.messageRepository.create({
                 ...base,
                 content: caption ?? '',
                 caption,
+                thumbnail,
                 decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
             });
         }

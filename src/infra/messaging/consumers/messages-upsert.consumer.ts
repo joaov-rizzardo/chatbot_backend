@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { RabbitMQService } from '../rabbitmq.service';
 import { ProcessInboundMessageUseCase } from 'src/application/use-cases/messaging/process-inbound-message.use-case';
+import { StorageService } from 'src/domain/services/storage/storage.service';
 import { MessagesUpsertPayload } from './types/messages-upsert.types';
 import { MessageHandler } from './handlers/message-handler.interface';
 import { TextMessageHandler } from './handlers/text-message.handler';
@@ -17,17 +18,20 @@ export class MessagesUpsertConsumer implements OnApplicationBootstrap {
     private readonly logger = new Logger(MessagesUpsertConsumer.name);
     private readonly queue = 'evolution.messages.upsert';
 
-    private readonly handlers = new Map<string, MessageHandler>([
-        ['conversation', new TextMessageHandler()],
-        ['imageMessage', new ImageMessageHandler()],
-        ['videoMessage', new VideoMessageHandler()],
-        ['audioMessage', new AudioMessageHandler()],
-    ]);
+    private readonly handlers: Map<string, MessageHandler>;
 
     constructor(
         private readonly rabbitMQService: RabbitMQService,
         private readonly processInboundMessage: ProcessInboundMessageUseCase,
-    ) {}
+        private readonly storageService: StorageService,
+    ) {
+        this.handlers = new Map<string, MessageHandler>([
+            ['conversation', new TextMessageHandler()],
+            ['imageMessage', new ImageMessageHandler(this.storageService)],
+            ['videoMessage', new VideoMessageHandler(this.storageService)],
+            ['audioMessage', new AudioMessageHandler()],
+        ]);
+    }
 
     async onApplicationBootstrap(): Promise<void> {
         const channel = this.rabbitMQService.getChannel();
@@ -78,7 +82,7 @@ export class MessagesUpsertConsumer implements OnApplicationBootstrap {
             return;
         }
 
-        const dto = handler.build(instance, data);
+        const dto = await handler.build(instance, data);
         await this.processInboundMessage.execute(dto);
     }
 }

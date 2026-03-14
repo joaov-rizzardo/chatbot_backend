@@ -1,15 +1,17 @@
 import { Injectable, Optional } from '@nestjs/common';
-import { Message, MessageMediaDecryption } from 'src/domain/entities/message';
+import { Message, MessageMediaDecryption, MessageThumbnail } from 'src/domain/entities/message';
 import { CreateMessageData, MessageRepository } from 'src/domain/repositories/message.repository';
 import { PrismaService } from '../prisma.service';
 import type { PrismaTransactionClient } from '../prisma-transaction-client';
 import {
     Messages as PrismaMessage,
     MessageMediaDecryption as PrismaMessageMediaDecryption,
+    MessageThumbnail as PrismaMessageThumbnail,
 } from 'generated/prisma/client';
 
-type PrismaMessageWithDecryption = PrismaMessage & {
+type PrismaMessageWithRelations = PrismaMessage & {
     decryption: PrismaMessageMediaDecryption | null;
+    thumbnail: PrismaMessageThumbnail | null;
 };
 
 @Injectable()
@@ -34,6 +36,19 @@ export class PrismaMessageRepository implements MessageRepository {
                 sent_at: data.sentAt,
                 caption: data.caption ?? null,
                 replyToId: data.replyToId ?? null,
+                ...(data.thumbnail && {
+                    thumbnail: {
+                        create: {
+                            url: data.thumbnail.url,
+                            storageProvider: data.thumbnail.storageProvider,
+                            storageKey: data.thumbnail.storageKey,
+                            mimeType: data.thumbnail.mimeType,
+                            fileSize: data.thumbnail.fileSize ?? null,
+                            width: data.thumbnail.width ?? null,
+                            height: data.thumbnail.height ?? null,
+                        },
+                    },
+                }),
                 ...(data.decryption && {
                     decryption: {
                         create: {
@@ -47,6 +62,7 @@ export class PrismaMessageRepository implements MessageRepository {
                 }),
             },
             include: {
+                thumbnail: true,
                 decryption: true,
             },
         });
@@ -56,12 +72,12 @@ export class PrismaMessageRepository implements MessageRepository {
     async findByExternalId(externalId: string): Promise<Message | null> {
         const result = await this.prisma.messages.findUnique({
             where: { externalId },
-            include: { decryption: true },
+            include: { thumbnail: true, decryption: true },
         });
         return result ? this.toEntity(result) : null;
     }
 
-    private toEntity(data: PrismaMessageWithDecryption): Message {
+    private toEntity(data: PrismaMessageWithRelations): Message {
         return new Message(
             data.id,
             data.conversationId,
@@ -73,9 +89,23 @@ export class PrismaMessageRepository implements MessageRepository {
             data.created_at,
             data.updated_at,
             data.caption,
-            data.thumbnailUrl,
             data.replyToId,
             undefined,
+            data.thumbnail
+                ? new MessageThumbnail(
+                      data.thumbnail.id,
+                      data.thumbnail.messageId,
+                      data.thumbnail.url,
+                      data.thumbnail.storageProvider,
+                      data.thumbnail.storageKey,
+                      data.thumbnail.mimeType,
+                      data.thumbnail.fileSize,
+                      data.thumbnail.width,
+                      data.thumbnail.height,
+                      data.thumbnail.created_at,
+                      data.thumbnail.updated_at,
+                  )
+                : undefined,
             data.decryption
                 ? new MessageMediaDecryption(
                       data.decryption.id,
