@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InstanceRepository } from 'src/domain/repositories/instance.repository';
 import { MessageRepository } from 'src/domain/repositories/message.repository';
 import { MessageDirection, MessageType } from 'src/domain/entities/message';
-import { TransactionManager } from 'src/domain/services/database/transaction-manager';
+import { TransactionManager, UnitOfWork } from 'src/domain/services/database/transaction-manager';
+import { Instance } from 'src/domain/entities/instance';
+import { Contact } from 'src/domain/entities/contact';
+import { Conversation } from 'src/domain/entities/conversation';
 
 export interface TextMessageContent {
     type: 'TEXT';
@@ -43,9 +46,6 @@ export class ProcessInboundMessageUseCase {
     ) {}
 
     async execute(dto: ProcessInboundMessageDto): Promise<void> {
-        const phoneNumber = dto.remoteJid.split('@')[0];
-        const direction: MessageDirection = dto.fromMe ? 'OUTBOUND' : 'INBOUND';
-
         const instance = await this.instanceRepository.findByInstanceName(dto.instanceName);
         if (!instance) {
             this.logger.warn(`Instance "${dto.instanceName}" not found. Skipping message.`);
@@ -57,68 +57,82 @@ export class ProcessInboundMessageUseCase {
             return;
         }
 
-        const existingMessage = await this.messageRepository.findByExternalId(dto.externalId);
-        if (existingMessage) {
+        const alreadyProcessed = await this.messageRepository.findByExternalId(dto.externalId);
+        if (alreadyProcessed) {
             this.logger.warn(`Message "${dto.externalId}" already processed. Skipping.`);
             return;
         }
 
-        const sentAt = new Date(dto.messageTimestamp * 1000);
-        const type = this.toMessageType(dto.content.type);
-
         await this.transactionManager.runInTransaction(async (uow) => {
-            let contact = await uow.contactRepository.findByWorkspaceAndPhone(
-                instance.workspaceId,
-                phoneNumber,
-            );
-            if (!contact) {
-                contact = await uow.contactRepository.create({
-                    workspaceId: instance.workspaceId,
-                    phoneNumber,
-                    name: dto.pushName ?? phoneNumber,
-                });
-            }
+            const contact = await this.findOrCreateContact(uow, instance, dto);
+            const conversation = await this.findOrCreateConversation(uow, instance, contact);
 
-            let conversation = await uow.conversationRepository.findByWorkspaceContactAndInstance(
-                instance.workspaceId,
-                contact.id,
-                instance.phoneNumber!,
-            );
-            if (!conversation) {
-                conversation = await uow.conversationRepository.create({
-                    workspaceId: instance.workspaceId,
-                    contactId: contact.id,
-                    instancePhoneNumber: instance.phoneNumber!,
-                });
-            }
-
+            const sentAt = new Date(dto.messageTimestamp * 1000);
             await uow.conversationRepository.updateLastMessageAt(conversation.id, sentAt);
-
-            if (dto.content.type === 'TEXT') {
-                await uow.messageRepository.create({
-                    conversationId: conversation.id,
-                    content: dto.content.text,
-                    type,
-                    direction,
-                    externalId: dto.externalId,
-                    sentAt,
-                    replyToId: dto.replyToExternalId,
-                });
-            } else {
-                const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption } = dto.content;
-                await uow.messageRepository.create({
-                    conversationId: conversation.id,
-                    content: caption ?? '',
-                    type,
-                    direction,
-                    externalId: dto.externalId,
-                    sentAt,
-                    caption,
-                    replyToId: dto.replyToExternalId,
-                    decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
-                });
-            }
+            await this.createMessage(uow, conversation.id, sentAt, dto);
         });
+    }
+
+    private async findOrCreateContact(
+        uow: UnitOfWork,
+        instance: Instance,
+        dto: ProcessInboundMessageDto,
+    ): Promise<Contact> {
+        const phoneNumber = dto.remoteJid.split('@')[0];
+
+        const existing = await uow.contactRepository.findByWorkspaceAndPhone(
+            instance.workspaceId,
+            phoneNumber,
+        );
+        if (existing) return existing;
+
+        return uow.contactRepository.create({
+            workspaceId: instance.workspaceId,
+            phoneNumber,
+            name: dto.pushName ?? phoneNumber,
+        });
+    }
+
+    private async findOrCreateConversation(
+        uow: UnitOfWork,
+        instance: Instance,
+        contact: Contact,
+    ): Promise<Conversation> {
+        const existing = await uow.conversationRepository.findByWorkspaceContactAndInstance(
+            instance.workspaceId,
+            contact.id,
+            instance.phoneNumber!,
+        );
+        if (existing) return existing;
+
+        return uow.conversationRepository.create({
+            workspaceId: instance.workspaceId,
+            contactId: contact.id,
+            instancePhoneNumber: instance.phoneNumber!,
+        });
+    }
+
+    private async createMessage(
+        uow: UnitOfWork,
+        conversationId: string,
+        sentAt: Date,
+        dto: ProcessInboundMessageDto,
+    ): Promise<void> {
+        const direction: MessageDirection = dto.fromMe ? 'OUTBOUND' : 'INBOUND';
+        const type = this.toMessageType(dto.content.type);
+        const base = { conversationId, type, direction, externalId: dto.externalId, sentAt, replyToId: dto.replyToExternalId };
+
+        if (dto.content.type === 'TEXT') {
+            await uow.messageRepository.create({ ...base, content: dto.content.text });
+        } else {
+            const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption } = dto.content;
+            await uow.messageRepository.create({
+                ...base,
+                content: caption ?? '',
+                caption,
+                decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
+            });
+        }
     }
 
     private toMessageType(type: InboundMessageContent['type']): MessageType {
