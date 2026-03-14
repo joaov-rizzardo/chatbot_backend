@@ -7,6 +7,9 @@ import { PrismaWorkspaceMemberRepository } from "./repositories/prisma-workspace
 import { PrismaUserRepository } from "./repositories/prisma-user.repository";
 import { PrismaContactTagRepository } from "./repositories/prisma-contact-tag.repository";
 import { PrismaTagRepository } from "./repositories/prisma-tag.repository";
+import { PrismaContactRepository } from "./repositories/prisma-contact.repository";
+import { PrismaConversationRepository } from "./repositories/prisma-conversation.repository";
+import { PrismaMessageRepository } from "./repositories/prisma-message.repository";
 
 @Injectable()
 export class PrismaTransactionManager implements TransactionManager {
@@ -29,6 +32,9 @@ export class PrismaTransactionManager implements TransactionManager {
             workspaceMemberRepository: new PrismaWorkspaceMemberRepository(this.prisma, tx),
             contactTagRepository: new PrismaContactTagRepository(this.prisma, tx),
             tagRepository: new PrismaTagRepository(this.prisma, tx),
+            contactRepository: new PrismaContactRepository(this.prisma, tx),
+            conversationRepository: new PrismaConversationRepository(this.prisma, tx),
+            messageRepository: new PrismaMessageRepository(this.prisma, tx),
         }
     }
 }

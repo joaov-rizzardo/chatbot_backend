@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ContactRepository } from 'src/domain/repositories/contact.repository';
-import { ConversationRepository } from 'src/domain/repositories/conversation.repository';
 import { InstanceRepository } from 'src/domain/repositories/instance.repository';
 import { MessageRepository } from 'src/domain/repositories/message.repository';
 import { MessageDirection, MessageType } from 'src/domain/entities/message';
+import { TransactionManager } from 'src/domain/services/database/transaction-manager';
 
 export interface TextMessageContent {
     type: 'TEXT';
@@ -39,9 +38,8 @@ export class ProcessInboundMessageUseCase {
 
     constructor(
         private readonly instanceRepository: InstanceRepository,
-        private readonly contactRepository: ContactRepository,
-        private readonly conversationRepository: ConversationRepository,
         private readonly messageRepository: MessageRepository,
+        private readonly transactionManager: TransactionManager,
     ) {}
 
     async execute(dto: ProcessInboundMessageDto): Promise<void> {
@@ -65,60 +63,62 @@ export class ProcessInboundMessageUseCase {
             return;
         }
 
-        let contact = await this.contactRepository.findByWorkspaceAndPhone(
-            instance.workspaceId,
-            phoneNumber,
-        );
-        if (!contact) {
-            contact = await this.contactRepository.create({
-                workspaceId: instance.workspaceId,
-                phoneNumber,
-                name: dto.pushName ?? phoneNumber,
-            });
-        }
-
-        let conversation = await this.conversationRepository.findByWorkspaceContactAndInstance(
-            instance.workspaceId,
-            contact.id,
-            instance.phoneNumber,
-        );
-        if (!conversation) {
-            conversation = await this.conversationRepository.create({
-                workspaceId: instance.workspaceId,
-                contactId: contact.id,
-                instancePhoneNumber: instance.phoneNumber,
-            });
-        }
-
         const sentAt = new Date(dto.messageTimestamp * 1000);
-        await this.conversationRepository.updateLastMessageAt(conversation.id, sentAt);
-
         const type = this.toMessageType(dto.content.type);
 
-        if (dto.content.type === 'TEXT') {
-            await this.messageRepository.create({
-                conversationId: conversation.id,
-                content: dto.content.text,
-                type,
-                direction,
-                externalId: dto.externalId,
-                sentAt,
-                replyToId: dto.replyToExternalId,
-            });
-        } else {
-            const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption } = dto.content;
-            await this.messageRepository.create({
-                conversationId: conversation.id,
-                content: caption ?? '',
-                type,
-                direction,
-                externalId: dto.externalId,
-                sentAt,
-                caption,
-                replyToId: dto.replyToExternalId,
-                decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
-            });
-        }
+        await this.transactionManager.runInTransaction(async (uow) => {
+            let contact = await uow.contactRepository.findByWorkspaceAndPhone(
+                instance.workspaceId,
+                phoneNumber,
+            );
+            if (!contact) {
+                contact = await uow.contactRepository.create({
+                    workspaceId: instance.workspaceId,
+                    phoneNumber,
+                    name: dto.pushName ?? phoneNumber,
+                });
+            }
+
+            let conversation = await uow.conversationRepository.findByWorkspaceContactAndInstance(
+                instance.workspaceId,
+                contact.id,
+                instance.phoneNumber!,
+            );
+            if (!conversation) {
+                conversation = await uow.conversationRepository.create({
+                    workspaceId: instance.workspaceId,
+                    contactId: contact.id,
+                    instancePhoneNumber: instance.phoneNumber!,
+                });
+            }
+
+            await uow.conversationRepository.updateLastMessageAt(conversation.id, sentAt);
+
+            if (dto.content.type === 'TEXT') {
+                await uow.messageRepository.create({
+                    conversationId: conversation.id,
+                    content: dto.content.text,
+                    type,
+                    direction,
+                    externalId: dto.externalId,
+                    sentAt,
+                    replyToId: dto.replyToExternalId,
+                });
+            } else {
+                const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption } = dto.content;
+                await uow.messageRepository.create({
+                    conversationId: conversation.id,
+                    content: caption ?? '',
+                    type,
+                    direction,
+                    externalId: dto.externalId,
+                    sentAt,
+                    caption,
+                    replyToId: dto.replyToExternalId,
+                    decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
+                });
+            }
+        });
     }
 
     private toMessageType(type: InboundMessageContent['type']): MessageType {

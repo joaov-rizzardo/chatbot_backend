@@ -1,7 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
 import { Contact } from "src/domain/entities/contact";
 import { ContactRepository, CreateContactData, UpdateContactData } from "src/domain/repositories/contact.repository";
 import { PrismaService } from "../prisma.service";
+import type { PrismaTransactionClient } from "../prisma-transaction-client";
 import { Contacts as PrismaContact } from "generated/prisma/client";
 
 @Injectable()
@@ -9,10 +10,15 @@ export class PrismaContactRepository implements ContactRepository {
 
     constructor(
         private readonly prismaService: PrismaService,
+        @Optional() private readonly transactionClient?: PrismaTransactionClient,
     ) { }
 
+    private get prisma() {
+        return this.transactionClient !== undefined ? this.transactionClient : this.prismaService;
+    }
+
     async create(data: CreateContactData): Promise<Contact> {
-        const result = await this.prismaService.contacts.create({
+        const result = await this.prisma.contacts.create({
             data: {
                 workspaceId: data.workspaceId,
                 phoneNumber: data.phoneNumber,
@@ -25,7 +31,7 @@ export class PrismaContactRepository implements ContactRepository {
     }
 
     async findByWorkspaceAndPhone(workspaceId: string, phoneNumber: string): Promise<Contact | null> {
-        const result = await this.prismaService.contacts.findUnique({
+        const result = await this.prisma.contacts.findUnique({
             where: {
                 workspaceId_phoneNumber: { workspaceId, phoneNumber },
             },
@@ -34,14 +40,14 @@ export class PrismaContactRepository implements ContactRepository {
     }
 
     async findById(id: string): Promise<Contact | null> {
-        const result = await this.prismaService.contacts.findUnique({
+        const result = await this.prisma.contacts.findUnique({
             where: { id },
         });
         return result ? this.toEntity(result) : null;
     }
 
     async update(id: string, data: UpdateContactData): Promise<Contact> {
-        const result = await this.prismaService.contacts.update({
+        const result = await this.prisma.contacts.update({
             where: { id },
             data: {
                 name: data.name,
@@ -53,13 +59,13 @@ export class PrismaContactRepository implements ContactRepository {
     }
 
     async delete(id: string): Promise<void> {
-        await this.prismaService.contacts.delete({
+        await this.prisma.contacts.delete({
             where: { id },
         });
     }
 
     async findByWorkspaceId(workspaceId: string): Promise<Contact[]> {
-        const results = await this.prismaService.contacts.findMany({
+        const results = await this.prisma.contacts.findMany({
             where: { workspaceId },
             orderBy: { name: 'asc' },
             include: {

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Message, MessageMediaDecryption } from 'src/domain/entities/message';
 import { CreateMessageData, MessageRepository } from 'src/domain/repositories/message.repository';
 import { PrismaService } from '../prisma.service';
+import type { PrismaTransactionClient } from '../prisma-transaction-client';
 import {
     Messages as PrismaMessage,
     MessageMediaDecryption as PrismaMessageMediaDecryption,
@@ -13,10 +14,17 @@ type PrismaMessageWithDecryption = PrismaMessage & {
 
 @Injectable()
 export class PrismaMessageRepository implements MessageRepository {
-    constructor(private readonly prismaService: PrismaService) {}
+    constructor(
+        private readonly prismaService: PrismaService,
+        @Optional() private readonly transactionClient?: PrismaTransactionClient,
+    ) {}
+
+    private get prisma() {
+        return this.transactionClient !== undefined ? this.transactionClient : this.prismaService;
+    }
 
     async create(data: CreateMessageData): Promise<Message> {
-        const result = await this.prismaService.messages.create({
+        const result = await this.prisma.messages.create({
             data: {
                 conversationId: data.conversationId,
                 content: data.content,
@@ -46,7 +54,7 @@ export class PrismaMessageRepository implements MessageRepository {
     }
 
     async findByExternalId(externalId: string): Promise<Message | null> {
-        const result = await this.prismaService.messages.findUnique({
+        const result = await this.prisma.messages.findUnique({
             where: { externalId },
             include: { decryption: true },
         });
