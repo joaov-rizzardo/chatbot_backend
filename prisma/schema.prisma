@@ -153,6 +153,7 @@ model Messages {
   conversationId String
   content        String           @db.Text
   caption        String?          @db.Text
+  thumbnailUrl   String?
   type           MessageType
   direction      MessageDirection
   externalId     String           @unique
@@ -164,6 +165,7 @@ model Messages {
   replyTo        Messages?        @relation("MessageReplies", fields: [replyToId], references: [externalId])
   replies        Messages[]       @relation("MessageReplies")
   media          MessageMedia?
+  decryption     MessageMediaDecryption?
 
   @@index([conversationId])
   @@index([conversationId, created_at])
@@ -171,17 +173,27 @@ model Messages {
   @@index([replyToId])
 }
 
+model MessageMediaDecryption {
+  id            String    @id @default(uuid())
+  messageId     String    @unique
+  url           String
+  mimeType      String
+  fileSize      Int?
+  mediaKey      String    @db.Text
+  fileEncSha256 String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  message       Messages  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
 model MessageMedia {
-  id           String   @id @default(uuid())
-  messageId    String   @unique
-  url          String
-  mimeType     String
-  fileName     String?
-  fileSize     Int?
-  thumbnailUrl String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  message      Messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  messageId  String   @unique
+  url        String
+  mimeType   String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  message    Messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
 
 enum MessageType {
