@@ -65,5 +65,6 @@ export class Message {
         public media?: MessageMedia,
         public thumbnail?: MessageThumbnail,
         public decryption?: MessageMediaDecryption,
+        public replyTo?: Message,
     ) {}
 }

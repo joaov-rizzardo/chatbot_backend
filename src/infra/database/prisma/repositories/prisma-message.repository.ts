@@ -14,6 +14,7 @@ type PrismaMessageWithRelations = PrismaMessage & {
     media: PrismaMessageMedia | null;
     decryption: PrismaMessageMediaDecryption | null;
     thumbnail: PrismaMessageThumbnail | null;
+    replyTo?: (PrismaMessage & { media: PrismaMessageMedia | null; thumbnail: PrismaMessageThumbnail | null }) | null;
 };
 
 @Injectable()
@@ -127,7 +128,7 @@ export class PrismaMessageRepository implements MessageRepository {
     async findByConversationId(conversationId: string): Promise<Message[]> {
         const results = await this.prisma.messages.findMany({
             where: { conversationId },
-            include: { media: true, thumbnail: true },
+            include: { media: true, thumbnail: true, replyTo: { include: { media: true, thumbnail: true } } },
             orderBy: { sent_at: 'desc' },
         });
         return results.map((r) => this.toEntity({ ...r, decryption: null }));
@@ -190,6 +191,9 @@ export class PrismaMessageRepository implements MessageRepository {
                       data.decryption.created_at,
                       data.decryption.updated_at,
                   )
+                : undefined,
+            data.replyTo
+                ? this.toEntity({ ...data.replyTo, decryption: null, replyTo: null })
                 : undefined,
         );
     }
