@@ -29,6 +29,11 @@ export class LocalDiskStorageService implements StorageService {
         };
     }
 
+    async read(key: string): Promise<Buffer> {
+        const filePath = path.join(this.storagePath, key);
+        return fs.readFile(filePath);
+    }
+
     async delete(key: string): Promise<void> {
         const filePath = path.join(this.storagePath, key);
         await fs.unlink(filePath).catch((err) => {

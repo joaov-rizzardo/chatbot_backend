@@ -14,5 +14,6 @@ export interface StoredFile {
 
 export abstract class StorageService {
     abstract store(options: StoreFileOptions): Promise<StoredFile>;
+    abstract read(key: string): Promise<Buffer>;
     abstract delete(key: string): Promise<void>;
 }

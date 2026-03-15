@@ -1,4 +1,4 @@
-import { Message, MessageDirection, MessageType } from '../entities/message';
+import { Message, MessageMedia, MessageDirection, MessageType } from '../entities/message';
 import { StorageProvider } from '../services/storage/storage.service';
 
 export interface CreateMessageThumbnailData {
@@ -19,6 +19,18 @@ export interface CreateMessageMediaDecryptionData {
     fileSize?: number;
 }
 
+export interface CreateMessageMediaData {
+    url: string;
+    storageProvider: StorageProvider;
+    storageKey: string;
+    mimeType: string;
+    fileSize?: number;
+    fileName?: string;
+    width?: number;
+    height?: number;
+    duration?: number;
+}
+
 export interface CreateMessageData {
     conversationId: string;
     content: string;
@@ -34,6 +46,9 @@ export interface CreateMessageData {
 
 export abstract class MessageRepository {
     abstract create(data: CreateMessageData): Promise<Message>;
+    abstract findById(id: string): Promise<Message | null>;
     abstract findByExternalId(externalId: string): Promise<Message | null>;
     abstract findByConversationId(conversationId: string): Promise<Message[]>;
+    abstract createMedia(messageId: string, data: CreateMessageMediaData): Promise<MessageMedia>;
+    abstract deleteDecryption(messageId: string): Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Message, MessageMedia, MessageMediaDecryption, MessageThumbnail } from 'src/domain/entities/message';
-import { CreateMessageData, MessageRepository } from 'src/domain/repositories/message.repository';
+import { CreateMessageData, CreateMessageMediaData, MessageRepository } from 'src/domain/repositories/message.repository';
 import { PrismaService } from '../prisma.service';
 import type { PrismaTransactionClient } from '../prisma-transaction-client';
 import {
@@ -72,12 +72,56 @@ export class PrismaMessageRepository implements MessageRepository {
         return this.toEntity(result);
     }
 
+    async findById(id: string): Promise<Message | null> {
+        const result = await this.prisma.messages.findUnique({
+            where: { id },
+            include: { media: true, thumbnail: true, decryption: true },
+        });
+        return result ? this.toEntity(result) : null;
+    }
+
     async findByExternalId(externalId: string): Promise<Message | null> {
         const result = await this.prisma.messages.findUnique({
             where: { externalId },
             include: { media: true, thumbnail: true, decryption: true },
         });
         return result ? this.toEntity(result) : null;
+    }
+
+    async createMedia(messageId: string, data: CreateMessageMediaData): Promise<MessageMedia> {
+        const result = await this.prisma.messageMedia.create({
+            data: {
+                messageId,
+                url: data.url,
+                storageProvider: data.storageProvider,
+                storageKey: data.storageKey,
+                mimeType: data.mimeType,
+                fileSize: data.fileSize ?? null,
+                fileName: data.fileName ?? null,
+                width: data.width ?? null,
+                height: data.height ?? null,
+                duration: data.duration ?? null,
+            },
+        });
+        return new MessageMedia(
+            result.id,
+            result.messageId,
+            result.url,
+            result.storageProvider,
+            result.storageKey,
+            result.mimeType,
+            result.fileSize,
+            result.fileName,
+            result.duration,
+            result.width,
+            result.height,
+            result.created_at,
+            result.updated_at,
+        );
+    }
+
+    async deleteDecryption(messageId: string): Promise<void> {
+        await this.prisma.messageMediaDecryption.delete({ where: { messageId } });
     }
 
     async findByConversationId(conversationId: string): Promise<Message[]> {
