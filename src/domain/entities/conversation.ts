@@ -1,3 +1,6 @@
+import { Contact } from './contact';
+import { Message } from './message';
+
 export type ConversationStatus = 'OPEN' | 'PENDING' | 'CLOSED';
 
 export class Conversation {
@@ -10,5 +13,7 @@ export class Conversation {
         public lastMessageAt: Date | null,
         public createdAt: Date,
         public updatedAt: Date,
+        public lastMessage?: Message | null,
+        public contact?: Contact | null,
     ) {}
 }

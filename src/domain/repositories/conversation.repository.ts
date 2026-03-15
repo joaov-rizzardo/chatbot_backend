@@ -13,5 +13,6 @@ export abstract class ConversationRepository {
         contactId: string,
         instancePhoneNumber: string,
     ): Promise<Conversation | null>;
+    abstract findByWorkspaceId(workspaceId: string): Promise<Conversation[]>;
     abstract updateLastMessageAt(id: string, lastMessageAt: Date): Promise<void>;
 }
