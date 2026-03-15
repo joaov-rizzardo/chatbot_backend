@@ -8,6 +8,7 @@ export interface CreateConversationData {
 
 export abstract class ConversationRepository {
     abstract create(data: CreateConversationData): Promise<Conversation>;
+    abstract findById(id: string): Promise<Conversation | null>;
     abstract findByWorkspaceContactAndInstance(
         workspaceId: string,
         contactId: string,

@@ -41,6 +41,11 @@ export class PrismaConversationRepository implements ConversationRepository {
         return this.toEntity(result);
     }
 
+    async findById(id: string): Promise<Conversation | null> {
+        const result = await this.prisma.conversations.findUnique({ where: { id } });
+        return result ? this.toEntity(result) : null;
+    }
+
     async findByWorkspaceContactAndInstance(
         workspaceId: string,
         contactId: string,

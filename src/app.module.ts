@@ -11,6 +11,7 @@ import { ContactModule } from './infra/modules/contact.module';
 import { TagModule } from './infra/modules/tag.module';
 import { ContactTagModule } from './infra/modules/contact-tag.module';
 import { ConversationModule } from './infra/modules/conversation.module';
+import { MessageModule } from './infra/modules/message.module';
 import { MessagingModule } from './infra/messaging/messaging.module';
 import { StorageModule } from './infra/storage/storage.module';
 
@@ -31,6 +32,7 @@ import { StorageModule } from './infra/storage/storage.module';
     TagModule,
     ContactTagModule,
     ConversationModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [],

@@ -1,15 +1,17 @@
 import { Injectable, Optional } from '@nestjs/common';
-import { Message, MessageMediaDecryption, MessageThumbnail } from 'src/domain/entities/message';
+import { Message, MessageMedia, MessageMediaDecryption, MessageThumbnail } from 'src/domain/entities/message';
 import { CreateMessageData, MessageRepository } from 'src/domain/repositories/message.repository';
 import { PrismaService } from '../prisma.service';
 import type { PrismaTransactionClient } from '../prisma-transaction-client';
 import {
     Messages as PrismaMessage,
+    MessageMedia as PrismaMessageMedia,
     MessageMediaDecryption as PrismaMessageMediaDecryption,
     MessageThumbnail as PrismaMessageThumbnail,
 } from 'generated/prisma/client';
 
 type PrismaMessageWithRelations = PrismaMessage & {
+    media: PrismaMessageMedia | null;
     decryption: PrismaMessageMediaDecryption | null;
     thumbnail: PrismaMessageThumbnail | null;
 };
@@ -62,6 +64,7 @@ export class PrismaMessageRepository implements MessageRepository {
                 }),
             },
             include: {
+                media: true,
                 thumbnail: true,
                 decryption: true,
             },
@@ -72,9 +75,18 @@ export class PrismaMessageRepository implements MessageRepository {
     async findByExternalId(externalId: string): Promise<Message | null> {
         const result = await this.prisma.messages.findUnique({
             where: { externalId },
-            include: { thumbnail: true, decryption: true },
+            include: { media: true, thumbnail: true, decryption: true },
         });
         return result ? this.toEntity(result) : null;
+    }
+
+    async findByConversationId(conversationId: string): Promise<Message[]> {
+        const results = await this.prisma.messages.findMany({
+            where: { conversationId },
+            include: { media: true, thumbnail: true },
+            orderBy: { sent_at: 'desc' },
+        });
+        return results.map((r) => this.toEntity({ ...r, decryption: null }));
     }
 
     private toEntity(data: PrismaMessageWithRelations): Message {
@@ -90,7 +102,23 @@ export class PrismaMessageRepository implements MessageRepository {
             data.updated_at,
             data.caption,
             data.replyToId,
-            undefined,
+            data.media
+                ? new MessageMedia(
+                      data.media.id,
+                      data.media.messageId,
+                      data.media.url,
+                      data.media.storageProvider,
+                      data.media.storageKey,
+                      data.media.mimeType,
+                      data.media.fileSize,
+                      data.media.fileName,
+                      data.media.duration,
+                      data.media.width,
+                      data.media.height,
+                      data.media.created_at,
+                      data.media.updated_at,
+                  )
+                : undefined,
             data.thumbnail
                 ? new MessageThumbnail(
                       data.thumbnail.id,

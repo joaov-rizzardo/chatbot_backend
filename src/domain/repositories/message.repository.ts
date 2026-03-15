@@ -35,4 +35,5 @@ export interface CreateMessageData {
 export abstract class MessageRepository {
     abstract create(data: CreateMessageData): Promise<Message>;
     abstract findByExternalId(externalId: string): Promise<Message | null>;
+    abstract findByConversationId(conversationId: string): Promise<Message[]>;
 }
