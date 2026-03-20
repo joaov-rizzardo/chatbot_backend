@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Conversation } from 'src/domain/entities/conversation';
-import { ConversationRepository } from 'src/domain/repositories/conversation.repository';
+import {
+    ConversationPaginationParams,
+    ConversationRepository,
+    PaginatedConversations,
+} from 'src/domain/repositories/conversation.repository';
 
 @Injectable()
 export class ListWorkspaceConversationsUseCase {
     constructor(private readonly conversationRepository: ConversationRepository) {}
 
-    async execute(workspaceId: string): Promise<Conversation[]> {
-        return this.conversationRepository.findByWorkspaceId(workspaceId);
+    async execute(workspaceId: string, params: ConversationPaginationParams): Promise<PaginatedConversations> {
+        return this.conversationRepository.findByWorkspaceId(workspaceId, params);
     }
 }

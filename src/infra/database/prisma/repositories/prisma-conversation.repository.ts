@@ -3,8 +3,10 @@ import { Contact } from 'src/domain/entities/contact';
 import { Conversation } from 'src/domain/entities/conversation';
 import { Message } from 'src/domain/entities/message';
 import {
+    ConversationPaginationParams,
     ConversationRepository,
     CreateConversationData,
+    PaginatedConversations,
 } from 'src/domain/repositories/conversation.repository';
 import { PrismaService } from '../prisma.service';
 import type { PrismaTransactionClient } from '../prisma-transaction-client';
@@ -12,7 +14,13 @@ import {
     Contacts as PrismaContact,
     Conversations as PrismaConversation,
     Messages as PrismaMessage,
+    Prisma,
 } from 'generated/prisma/client';
+
+interface ConversationCursor {
+    lastMessageAt: string | null;
+    id: string;
+}
 
 type PrismaConversationWithRelations = PrismaConversation & {
     messages: PrismaMessage[];
@@ -57,10 +65,42 @@ export class PrismaConversationRepository implements ConversationRepository {
         return result ? this.toEntity(result) : null;
     }
 
-    async findByWorkspaceId(workspaceId: string): Promise<Conversation[]> {
+    async findByWorkspaceId(
+        workspaceId: string,
+        params: ConversationPaginationParams,
+    ): Promise<PaginatedConversations> {
+        const { cursor, limit } = params;
+
+        let decodedCursor: ConversationCursor | undefined;
+        if (cursor) {
+            decodedCursor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
+        }
+
+        const where: Prisma.ConversationsWhereInput = decodedCursor
+            ? {
+                  workspaceId,
+                  ...(decodedCursor.lastMessageAt !== null
+                      ? {
+                            OR: [
+                                { lastMessageAt: { lt: new Date(decodedCursor.lastMessageAt) } },
+                                {
+                                    lastMessageAt: new Date(decodedCursor.lastMessageAt),
+                                    id: { lt: decodedCursor.id },
+                                },
+                                { lastMessageAt: null },
+                            ],
+                        }
+                      : {
+                            lastMessageAt: null,
+                            id: { lt: decodedCursor.id },
+                        }),
+              }
+            : { workspaceId };
+
         const results = await this.prisma.conversations.findMany({
-            where: { workspaceId },
-            orderBy: { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+            where,
+            orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+            take: limit + 1,
             include: {
                 messages: {
                     orderBy: { sent_at: 'desc' },
@@ -69,7 +109,21 @@ export class PrismaConversationRepository implements ConversationRepository {
                 contact: true,
             },
         });
-        return results.map((r) => this.toEntityWithRelations(r));
+
+        const hasNextPage = results.length > limit;
+        const page = hasNextPage ? results.slice(0, limit) : results;
+
+        let nextCursor: string | null = null;
+        if (hasNextPage) {
+            const last = page[page.length - 1];
+            const cursorData: ConversationCursor = {
+                lastMessageAt: last.lastMessageAt?.toISOString() ?? null,
+                id: last.id,
+            };
+            nextCursor = Buffer.from(JSON.stringify(cursorData)).toString('base64url');
+        }
+
+        return { data: page.map((r) => this.toEntityWithRelations(r)), nextCursor };
     }
 
     async updateLastMessageAt(id: string, lastMessageAt: Date): Promise<void> {

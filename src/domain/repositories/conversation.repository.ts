@@ -6,6 +6,16 @@ export interface CreateConversationData {
     instancePhoneNumber: string;
 }
 
+export interface ConversationPaginationParams {
+    cursor?: string;
+    limit: number;
+}
+
+export interface PaginatedConversations {
+    data: Conversation[];
+    nextCursor: string | null;
+}
+
 export abstract class ConversationRepository {
     abstract create(data: CreateConversationData): Promise<Conversation>;
     abstract findById(id: string): Promise<Conversation | null>;
@@ -14,6 +24,6 @@ export abstract class ConversationRepository {
         contactId: string,
         instancePhoneNumber: string,
     ): Promise<Conversation | null>;
-    abstract findByWorkspaceId(workspaceId: string): Promise<Conversation[]>;
+    abstract findByWorkspaceId(workspaceId: string, params: ConversationPaginationParams): Promise<PaginatedConversations>;
     abstract updateLastMessageAt(id: string, lastMessageAt: Date): Promise<void>;
 }
