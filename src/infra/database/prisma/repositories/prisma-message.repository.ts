@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Message, MessageMedia, MessageMediaDecryption, MessageThumbnail } from 'src/domain/entities/message';
-import { CreateMessageData, CreateMessageMediaData, MessageRepository } from 'src/domain/repositories/message.repository';
+import { CreateMessageData, CreateMessageMediaData, FindMessagesParams, MessageRepository, MessagesPage } from 'src/domain/repositories/message.repository';
 import { PrismaService } from '../prisma.service';
 import type { PrismaTransactionClient } from '../prisma-transaction-client';
 import {
@@ -125,13 +125,26 @@ export class PrismaMessageRepository implements MessageRepository {
         await this.prisma.messageMediaDecryption.delete({ where: { messageId } });
     }
 
-    async findByConversationId(conversationId: string): Promise<Message[]> {
+    async findByConversationId(conversationId: string, params?: FindMessagesParams): Promise<MessagesPage> {
+        const limit = params?.limit ?? 50;
         const results = await this.prisma.messages.findMany({
             where: { conversationId },
+            ...(params?.cursor
+                ? { cursor: { id: params.cursor }, skip: 1 }
+                : {}),
+            take: limit + 1,
             include: { media: true, thumbnail: true, replyTo: { include: { media: true, thumbnail: true } } },
-            orderBy: { sent_at: 'desc' },
+            orderBy: [{ sent_at: 'desc' }, { id: 'desc' }],
         });
-        return results.map((r) => this.toEntity({ ...r, decryption: null }));
+
+        const hasMore = results.length > limit;
+        const data = hasMore ? results.slice(0, limit) : results;
+        const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+        return {
+            data: data.map((r) => this.toEntity({ ...r, decryption: null })),
+            nextCursor,
+        };
     }
 
     private toEntity(data: PrismaMessageWithRelations): Message {

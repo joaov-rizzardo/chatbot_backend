@@ -10,11 +10,11 @@ export class ListConversationMessagesUseCase {
         private readonly messageRepository: MessageRepository,
     ) {}
 
-    async execute(conversationId: string, workspaceId: string) {
+    async execute(conversationId: string, workspaceId: string, params?: { cursor?: string; limit?: number }) {
         const conversation = await this.conversationRepository.findById(conversationId);
         if (!conversation || conversation.workspaceId !== workspaceId) {
             throw new ConversationNotFoundError();
         }
-        return this.messageRepository.findByConversationId(conversationId);
+        return this.messageRepository.findByConversationId(conversationId, params);
     }
 }

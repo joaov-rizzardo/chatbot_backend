@@ -44,11 +44,21 @@ export interface CreateMessageData {
     decryption?: CreateMessageMediaDecryptionData;
 }
 
+export interface FindMessagesParams {
+    cursor?: string;
+    limit?: number;
+}
+
+export interface MessagesPage {
+    data: Message[];
+    nextCursor: string | null;
+}
+
 export abstract class MessageRepository {
     abstract create(data: CreateMessageData): Promise<Message>;
     abstract findById(id: string): Promise<Message | null>;
     abstract findByExternalId(externalId: string): Promise<Message | null>;
-    abstract findByConversationId(conversationId: string): Promise<Message[]>;
+    abstract findByConversationId(conversationId: string, params?: FindMessagesParams): Promise<MessagesPage>;
     abstract createMedia(messageId: string, data: CreateMessageMediaData): Promise<MessageMedia>;
     abstract deleteDecryption(messageId: string): Promise<void>;
 }

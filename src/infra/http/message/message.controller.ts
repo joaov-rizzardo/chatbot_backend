@@ -4,6 +4,7 @@ import {
     InternalServerErrorException,
     NotFoundException,
     Param,
+    Query,
     Req,
     UseGuards,
 } from '@nestjs/common';
@@ -29,10 +30,15 @@ export class MessageController {
     @Get('conversation/:conversationId')
     async listByConversation(
         @Param('conversationId') conversationId: string,
+        @Query('cursor') cursor: string | undefined,
+        @Query('limit') limit: string | undefined,
         @Req() req: WorkspaceRequest,
     ) {
         try {
-            return await this.listConversationMessagesUseCase.execute(conversationId, req.workspaceId);
+            return await this.listConversationMessagesUseCase.execute(conversationId, req.workspaceId, {
+                cursor,
+                limit: limit ? parseInt(limit, 10) : undefined,
+            });
         } catch (error) {
             if (error instanceof ConversationNotFoundError) {
                 throw new NotFoundException({ code: error.code, message: error.message });
