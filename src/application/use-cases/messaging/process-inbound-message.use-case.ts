@@ -77,42 +77,38 @@ export class ProcessInboundMessageUseCase {
             return;
         }
 
-        let createdMessage: Message | undefined;
-        let capturedContact: Contact | undefined;
-        let capturedConversation: Conversation | undefined;
+        let message: Message | undefined;
+        let contact: Contact | undefined;
+        let conversation: Conversation | undefined;
 
         await this.transactionManager.runInTransaction(async (uow) => {
-            const contact = await this.findOrCreateContact(uow, instance, dto);
-            const conversation = await this.findOrCreateConversation(uow, instance, contact);
-
+            contact = await this.findOrCreateContact(uow, instance, dto);
+            conversation = await this.findOrCreateConversation(uow, instance, contact);
             const sentAt = new Date(dto.messageTimestamp * 1000);
             await uow.conversationRepository.updateLastMessageAt(conversation.id, sentAt);
-            createdMessage = await this.createMessage(uow, conversation.id, sentAt, dto);
-            capturedContact = contact;
-            capturedConversation = conversation;
+            message = await this.createMessage(uow, conversation.id, sentAt, dto);
         });
 
-        if (createdMessage && capturedContact && capturedConversation) {
+        if (message && contact && conversation) {
             this.newMessageNotifier.notify(instance.workspaceId, {
-                conversationId: capturedConversation.id,
                 conversation: {
-                    id: capturedConversation.id,
-                    status: capturedConversation.status,
+                    id: conversation.id,
+                    status: conversation.status,
                     contact: {
-                        id: capturedContact.id,
-                        name: capturedContact.name,
-                        lastName: capturedContact.lastName,
-                        phoneNumber: capturedContact.phoneNumber,
+                        id: contact.id,
+                        name: contact.name,
+                        lastName: contact.lastName,
+                        phoneNumber: contact.phoneNumber,
                     },
                 },
                 message: {
-                    id: createdMessage.id,
-                    content: createdMessage.content,
-                    type: createdMessage.type,
-                    direction: createdMessage.direction,
-                    externalId: createdMessage.externalId,
-                    sentAt: createdMessage.sentAt,
-                    caption: createdMessage.caption,
+                    id: message.id,
+                    content: message.content,
+                    type: message.type,
+                    direction: message.direction,
+                    externalId: message.externalId,
+                    sentAt: message.sentAt,
+                    caption: message.caption,
                 },
             });
         }
@@ -124,11 +120,7 @@ export class ProcessInboundMessageUseCase {
         dto: ProcessInboundMessageDto,
     ): Promise<Contact> {
         const phoneNumber = dto.remoteJid.split('@')[0];
-
-        const existing = await uow.contactRepository.findByWorkspaceAndPhone(
-            instance.workspaceId,
-            phoneNumber,
-        );
+        const existing = await uow.contactRepository.findByWorkspaceAndPhone(instance.workspaceId, phoneNumber);
         if (existing) return existing;
 
         return uow.contactRepository.create({
@@ -164,30 +156,20 @@ export class ProcessInboundMessageUseCase {
         dto: ProcessInboundMessageDto,
     ): Promise<Message> {
         const direction: MessageDirection = dto.fromMe ? 'OUTBOUND' : 'INBOUND';
-        const type = this.toMessageType(dto.content.type);
+        const type = dto.content.type as MessageType;
         const base = { conversationId, type, direction, externalId: dto.externalId, sentAt, replyToId: dto.replyToExternalId };
 
         if (dto.content.type === 'TEXT') {
             return uow.messageRepository.create({ ...base, content: dto.content.text });
-        } else {
-            const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption, thumbnail } = dto.content;
-            return uow.messageRepository.create({
-                ...base,
-                content: caption ?? '',
-                caption,
-                thumbnail,
-                decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
-            });
         }
-    }
 
-    private toMessageType(type: InboundMessageContent['type']): MessageType {
-        const map: Record<InboundMessageContent['type'], MessageType> = {
-            TEXT: 'TEXT',
-            IMAGE: 'IMAGE',
-            VIDEO: 'VIDEO',
-            AUDIO: 'AUDIO',
-        };
-        return map[type];
+        const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption, thumbnail } = dto.content;
+        return uow.messageRepository.create({
+            ...base,
+            content: caption ?? '',
+            caption,
+            thumbnail,
+            decryption: { url, mimeType, mediaKey, fileEncSha256, fileSize },
+        });
     }
 }

@@ -10,7 +10,6 @@ import { SseNewMessageNotifier } from '../sse/notifiers/sse-new-message-notifier
 import { MessageController } from '../http/message/message.controller';
 
 @Module({
-    imports: [],
     providers: [
         ListConversationMessagesUseCase,
         DownloadMessageMediaUseCase,

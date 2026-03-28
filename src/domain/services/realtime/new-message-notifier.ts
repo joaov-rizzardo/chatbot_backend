@@ -3,7 +3,6 @@ import { ConversationStatus } from 'src/domain/entities/conversation';
 import { Observable } from 'rxjs';
 
 export interface NewMessageEvent {
-    conversationId: string;
     conversation: {
         id: string;
         status: ConversationStatus;
