@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InstanceRepository } from 'src/domain/repositories/instance.repository';
 import { MessageRepository } from 'src/domain/repositories/message.repository';
-import { MessageDirection, MessageType } from 'src/domain/entities/message';
+import { Message, MessageDirection, MessageType } from 'src/domain/entities/message';
 import { TransactionManager, UnitOfWork } from 'src/domain/services/database/transaction-manager';
 import { Instance } from 'src/domain/entities/instance';
 import { Contact } from 'src/domain/entities/contact';
 import { Conversation } from 'src/domain/entities/conversation';
 import { StorageProvider } from 'src/domain/services/storage/storage.service';
+import { NewMessageNotifier } from 'src/domain/services/realtime/new-message-notifier';
 
 export interface TextMessageContent {
     type: 'TEXT';
@@ -55,6 +56,7 @@ export class ProcessInboundMessageUseCase {
         private readonly instanceRepository: InstanceRepository,
         private readonly messageRepository: MessageRepository,
         private readonly transactionManager: TransactionManager,
+        private readonly newMessageNotifier: NewMessageNotifier,
     ) {}
 
     async execute(dto: ProcessInboundMessageDto): Promise<void> {
@@ -75,14 +77,45 @@ export class ProcessInboundMessageUseCase {
             return;
         }
 
+        let createdMessage: Message | undefined;
+        let capturedContact: Contact | undefined;
+        let capturedConversation: Conversation | undefined;
+
         await this.transactionManager.runInTransaction(async (uow) => {
             const contact = await this.findOrCreateContact(uow, instance, dto);
             const conversation = await this.findOrCreateConversation(uow, instance, contact);
 
             const sentAt = new Date(dto.messageTimestamp * 1000);
             await uow.conversationRepository.updateLastMessageAt(conversation.id, sentAt);
-            await this.createMessage(uow, conversation.id, sentAt, dto);
+            createdMessage = await this.createMessage(uow, conversation.id, sentAt, dto);
+            capturedContact = contact;
+            capturedConversation = conversation;
         });
+
+        if (createdMessage && capturedContact && capturedConversation) {
+            this.newMessageNotifier.notify(instance.workspaceId, {
+                conversationId: capturedConversation.id,
+                conversation: {
+                    id: capturedConversation.id,
+                    status: capturedConversation.status,
+                    contact: {
+                        id: capturedContact.id,
+                        name: capturedContact.name,
+                        lastName: capturedContact.lastName,
+                        phoneNumber: capturedContact.phoneNumber,
+                    },
+                },
+                message: {
+                    id: createdMessage.id,
+                    content: createdMessage.content,
+                    type: createdMessage.type,
+                    direction: createdMessage.direction,
+                    externalId: createdMessage.externalId,
+                    sentAt: createdMessage.sentAt,
+                    caption: createdMessage.caption,
+                },
+            });
+        }
     }
 
     private async findOrCreateContact(
@@ -129,16 +162,16 @@ export class ProcessInboundMessageUseCase {
         conversationId: string,
         sentAt: Date,
         dto: ProcessInboundMessageDto,
-    ): Promise<void> {
+    ): Promise<Message> {
         const direction: MessageDirection = dto.fromMe ? 'OUTBOUND' : 'INBOUND';
         const type = this.toMessageType(dto.content.type);
         const base = { conversationId, type, direction, externalId: dto.externalId, sentAt, replyToId: dto.replyToExternalId };
 
         if (dto.content.type === 'TEXT') {
-            await uow.messageRepository.create({ ...base, content: dto.content.text });
+            return uow.messageRepository.create({ ...base, content: dto.content.text });
         } else {
             const { url, mimeType, mediaKey, fileEncSha256, fileSize, caption, thumbnail } = dto.content;
-            await uow.messageRepository.create({
+            return uow.messageRepository.create({
                 ...base,
                 content: caption ?? '',
                 caption,

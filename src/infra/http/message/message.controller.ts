@@ -6,14 +6,17 @@ import {
     Param,
     Query,
     Req,
+    Sse,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Observable } from 'rxjs';
 import { DownloadMessageMediaUseCase } from 'src/application/use-cases/message/download-message-media-use-case';
 import { ListConversationMessagesUseCase } from 'src/application/use-cases/message/list-conversation-messages-use-case';
 import { ConversationNotFoundError } from 'src/domain/errors/conversation/conversation-not-found-error';
 import { MessageMediaNotFoundError } from 'src/domain/errors/message/message-media-not-found-error';
 import { MessageNotFoundError } from 'src/domain/errors/message/message-not-found-error';
+import { NewMessageNotifier } from 'src/domain/services/realtime/new-message-notifier';
 import { AuthenticationGuard } from 'src/infra/guards/authentication.guard';
 import { WorkspaceGuard, type WorkspaceRequest } from 'src/infra/guards/workspace.guard';
 
@@ -25,6 +28,7 @@ export class MessageController {
     constructor(
         private readonly listConversationMessagesUseCase: ListConversationMessagesUseCase,
         private readonly downloadMessageMediaUseCase: DownloadMessageMediaUseCase,
+        private readonly newMessageNotifier: NewMessageNotifier,
     ) {}
 
     @Get('conversation/:conversationId')
@@ -45,6 +49,11 @@ export class MessageController {
             }
             throw new InternalServerErrorException({ message: 'Failed to list messages' });
         }
+    }
+
+    @Sse('subscribe')
+    subscribeNewMessages(@Req() req: WorkspaceRequest): Observable<MessageEvent> {
+        return this.newMessageNotifier.subscribe(req.workspaceId);
     }
 
     @Get(':messageId/media')
